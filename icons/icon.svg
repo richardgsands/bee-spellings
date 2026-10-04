@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <clipPath id="body-clip"><ellipse cx="100" cy="108" rx="62" ry="58"/></clipPath>
+    <radialGradient id="body-shine" cx="0.38" cy="0.3" r="0.8"><stop offset="0" stop-color="#ffe27a"/><stop offset="1" stop-color="#ffbe1f"/></radialGradient>
+  </defs>
+  <rect width="512" height="512" fill="#fffaeb"/>
+  <path d="M256 36 446 146v220L256 476 66 366V146z" fill="#ffc93c" stroke="#f5a300" stroke-width="14"/>
+  <g transform="translate(86 92) scale(1.7)">
+      <g>
+        <g><ellipse fill="#cfeeff" stroke="#7bb8db" stroke-width="3" cx="58" cy="48" rx="30" ry="40" transform="rotate(-25 58 48)"/></g>
+        <g><ellipse fill="#cfeeff" stroke="#7bb8db" stroke-width="3" cx="142" cy="48" rx="30" ry="40" transform="rotate(25 142 48)"/></g>
+      </g>
+      <path d="M76 58 Q66 26 52 18" fill="none" stroke="#3b2a14" stroke-width="5" stroke-linecap="round"/>
+      <path d="M124 58 Q134 26 148 18" fill="none" stroke="#3b2a14" stroke-width="5" stroke-linecap="round"/>
+      <circle cx="52" cy="18" r="7" fill="#3b2a14"/>
+      <circle cx="148" cy="18" r="7" fill="#3b2a14"/>
+      <path d="M100 172 l-9 -10 h18 z" fill="#3b2a14"/>
+      <ellipse cx="100" cy="108" rx="62" ry="58" fill="url(#body-shine)"/>
+      <g clip-path="url(#body-clip)" fill="#3b2a14">
+        <path d="M30 128 Q100 146 170 128 L170 144 Q100 162 30 144 Z"/>
+        <path d="M30 156 Q100 174 170 156 L170 180 L30 180 Z"/>
+      </g>
+      <ellipse cx="100" cy="108" rx="62" ry="58" fill="none" stroke="#3b2a14" stroke-width="5"/>
+      <g>
+        <g><ellipse fill="#3b2a14" cx="78" cy="92" rx="10" ry="12"/><circle cx="81" cy="87" r="4" fill="#fff"/></g>
+        <g><ellipse fill="#3b2a14" cx="122" cy="92" rx="10" ry="12"/><circle cx="125" cy="87" r="4" fill="#fff"/></g>
+      </g>
+      <ellipse cx="62" cy="112" rx="9" ry="6" fill="#ff9fb3" opacity=".8"/>
+      <ellipse cx="138" cy="112" rx="9" ry="6" fill="#ff9fb3" opacity=".8"/>
+      <path fill="none" stroke="#3b2a14" stroke-width="5" stroke-linecap="round" d="M86 112 Q100 126 114 112"/>
+    
+  </g>
+</svg>

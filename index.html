@@ -1,0 +1,220 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <title>Spelling Bee</title>
+  <meta name="description" content="Practise your spellings by handwriting them, with Bumble the bee.">
+  <meta name="theme-color" content="#ffc93c">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Spelling Bee">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Andika:wght@400;700&family=Fredoka:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <!-- Bumble the bee: one drawing, cloned into every [data-bee] -->
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <defs>
+      <clipPath id="body-clip"><ellipse cx="100" cy="108" rx="62" ry="58"/></clipPath>
+      <radialGradient id="body-shine" cx="0.38" cy="0.3" r="0.8">
+        <stop offset="0" stop-color="#ffe27a"/>
+        <stop offset="1" stop-color="#ffbe1f"/>
+      </radialGradient>
+    </defs>
+  </svg>
+  <template id="bee-tpl">
+    <svg viewBox="0 0 200 190" aria-hidden="true">
+      <g class="wings">
+        <g class="wing-l"><ellipse class="wing" cx="58" cy="48" rx="30" ry="40" transform="rotate(-25 58 48)"/></g>
+        <g class="wing-r"><ellipse class="wing" cx="142" cy="48" rx="30" ry="40" transform="rotate(25 142 48)"/></g>
+      </g>
+      <path d="M76 58 Q66 26 52 18" class="antenna"/>
+      <path d="M124 58 Q134 26 148 18" class="antenna"/>
+      <circle cx="52" cy="18" r="7" class="antenna-tip"/>
+      <circle cx="148" cy="18" r="7" class="antenna-tip"/>
+      <path d="M100 172 l-9 -10 h18 z" class="stinger"/>
+      <ellipse cx="100" cy="108" rx="62" ry="58" fill="url(#body-shine)"/>
+      <g clip-path="url(#body-clip)" class="stripes">
+        <path d="M30 128 Q100 146 170 128 L170 144 Q100 162 30 144 Z"/>
+        <path d="M30 156 Q100 174 170 156 L170 180 L30 180 Z"/>
+      </g>
+      <ellipse cx="100" cy="108" rx="62" ry="58" class="outline"/>
+      <g class="eyes">
+        <g class="eye"><ellipse cx="78" cy="92" rx="10" ry="12"/><circle cx="81" cy="87" r="4" class="glint"/></g>
+        <g class="eye"><ellipse cx="122" cy="92" rx="10" ry="12"/><circle cx="125" cy="87" r="4" class="glint"/></g>
+      </g>
+      <ellipse cx="62" cy="112" rx="9" ry="6" class="cheek"/>
+      <ellipse cx="138" cy="112" rx="9" ry="6" class="cheek"/>
+      <path class="mouth mouth-smile" d="M86 112 Q100 126 114 112"/>
+      <path class="mouth mouth-happy" d="M82 108 Q100 136 118 108 Z"/>
+      <ellipse class="mouth mouth-think" cx="104" cy="117" rx="6" ry="7"/>
+      <path class="mouth mouth-oops" d="M84 120 q5 -6 10 0 t10 0 t10 0"/>
+    </svg>
+  </template>
+
+  <div class="hex-bg" aria-hidden="true"></div>
+
+  <!-- HOME -->
+  <main id="home" class="screen active">
+    <div class="home-card">
+      <div class="bee bee-home mood-smile" data-bee></div>
+      <h1>Spelling Bee</h1>
+      <p class="tagline">Write your spellings with <strong>Bumble</strong>!</p>
+      <p class="list-name" id="home-list"></p>
+      <div class="home-buttons">
+        <button class="btn btn-big btn-honey" id="btn-start">Let's start! ✏️</button>
+        <button class="btn btn-soft" id="btn-learn">👀 Look at my words</button>
+        <button class="btn btn-soft hidden" id="btn-tricky">🔁 Tricky words</button>
+      </div>
+    </div>
+    <button class="grownups-btn" id="btn-grownups" aria-label="Grown-ups: press and hold">
+      <span class="hold-ring"></span>⚙️ Grown-ups <small>(hold)</small>
+    </button>
+  </main>
+
+  <!-- LEARN -->
+  <main id="learn" class="screen">
+    <header class="topbar">
+      <button class="btn btn-icon" data-go="home" aria-label="Home">🏠</button>
+      <h2>Tap a word to hear it</h2>
+      <span></span>
+    </header>
+    <p class="rule-note" id="learn-note"></p>
+    <div class="honeycomb" id="learn-words"></div>
+  </main>
+
+  <!-- PRACTISE -->
+  <main id="practise" class="screen">
+    <header class="topbar">
+      <button class="btn btn-icon" id="btn-quit" aria-label="Home">🏠</button>
+      <div class="progress" id="progress"></div>
+      <div class="honey-score" aria-label="Honey collected">🍯 <span id="score">0</span></div>
+    </header>
+
+    <section class="coach">
+      <div class="bee bee-coach mood-smile" id="coach-bee" data-bee></div>
+      <div class="bubble" id="bubble" aria-live="polite">
+        <div id="bubble-text"></div>
+        <div id="reveal" class="reveal hidden"></div>
+      </div>
+    </section>
+
+    <section class="pad-wrap">
+      <div class="pad" id="pad"></div>
+      <div class="checking hidden" id="checking"><span class="spinner"></span> Bumble is reading…</div>
+    </section>
+
+    <nav class="controls">
+      <button class="btn btn-ctrl" id="btn-hear">🔊<span>Hear it</span></button>
+      <button class="btn btn-ctrl" id="btn-peek">🐝<span>Peek</span></button>
+      <button class="btn btn-ctrl" id="btn-undo">↩️<span>Undo</span></button>
+      <button class="btn btn-ctrl" id="btn-clear">🧽<span>Clear</span></button>
+      <button class="btn btn-ctrl btn-check" id="btn-check">✅<span>Check</span></button>
+      <button class="btn btn-ctrl btn-check hidden" id="btn-next">➡️<span>Next</span></button>
+    </nav>
+  </main>
+
+  <!-- RESULTS -->
+  <main id="results" class="screen">
+    <div class="home-card">
+      <div class="bee bee-home mood-happy dance" data-bee></div>
+      <h1 id="results-title">Buzz-tastic!</h1>
+      <p class="tagline" id="results-sub"></p>
+      <ul class="results-list" id="results-list"></ul>
+      <div class="home-buttons">
+        <button class="btn btn-soft hidden" id="btn-results-tricky">🔁 Practise my tricky words</button>
+        <button class="btn btn-big btn-honey" id="btn-again">Play again</button>
+        <button class="btn btn-soft" data-go="home">🏠 Home</button>
+      </div>
+    </div>
+  </main>
+
+  <!-- GROWN-UPS -->
+  <main id="settings" class="screen">
+    <header class="topbar">
+      <button class="btn btn-icon" id="btn-settings-done" aria-label="Done">🏠</button>
+      <h2>Grown-ups</h2>
+      <span></span>
+    </header>
+    <div class="settings">
+      <section class="panel">
+        <h3>Word lists</h3>
+        <div class="row">
+          <label for="list-select">Practising:</label>
+          <select id="list-select"></select>
+          <button class="btn btn-small" id="btn-new-list">＋ New list</button>
+          <button class="btn btn-small btn-danger" id="btn-del-list">Delete list</button>
+        </div>
+        <label class="field">List name <input id="list-name" type="text" autocomplete="off"></label>
+        <label class="field">Spelling rule / note (shown on “Look at my words”)
+          <textarea id="list-note" rows="2"></textarea></label>
+        <div class="row">
+          <button class="btn btn-small" id="btn-all-on">Tick all</button>
+          <button class="btn btn-small" id="btn-all-off">Untick all</button>
+          <span class="muted" id="word-count"></span>
+        </div>
+        <table class="words-table">
+          <thead><tr><th>Use</th><th>Word</th><th>Example sentence (optional, read aloud)</th><th></th></tr></thead>
+          <tbody id="words-body"></tbody>
+        </table>
+        <label class="field">Add words (separate with spaces, commas or new lines)
+          <textarea id="add-words" rows="2" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="e.g. jumped, jumping, hopped"></textarea></label>
+        <button class="btn btn-small btn-honey" id="btn-add-words">Add words</button>
+      </section>
+
+      <section class="panel">
+        <h3>Practice</h3>
+        <label class="field-inline">Words per go
+          <select id="per-go">
+            <option value="5">5</option><option value="10">10</option><option value="15">15</option><option value="0">All</option>
+          </select></label>
+        <label class="field-inline"><input type="checkbox" id="read-sentence"> Read the example sentence after the word</label>
+        <label class="field-inline">Writing with fingers
+          <select id="finger-mode">
+            <option value="auto">Allowed until the Apple Pencil is used (palm rejection)</option>
+            <option value="always">Always allowed</option>
+          </select></label>
+      </section>
+
+      <section class="panel">
+        <h3>Voice</h3>
+        <label class="field-inline">Voice <select id="voice"></select></label>
+        <label class="field-inline">Speed <input type="range" id="rate" min="0.6" max="1.1" step="0.05"></label>
+        <button class="btn btn-small" id="btn-test-voice">🔊 Test</button>
+      </section>
+
+      <section class="panel">
+        <h3>Save &amp; share</h3>
+        <p class="muted">Lists are saved on this device. Export them to move them to another device.</p>
+        <div class="row">
+          <button class="btn btn-small" id="btn-export">⬇️ Export lists</button>
+          <label class="btn btn-small file-btn">⬆️ Import lists<input type="file" id="import-file" accept="application/json,.json"></label>
+          <button class="btn btn-small" id="btn-clear-stats">Reset progress</button>
+          <button class="btn btn-small btn-danger" id="btn-reset">Reset everything</button>
+        </div>
+      </section>
+      <p class="muted small">Handwriting is read by Google's handwriting recognition service, so an internet connection is needed. Only the pen strokes are sent.</p>
+    </div>
+  </main>
+
+  <!-- PEEK POPUP -->
+  <div class="overlay hidden" id="peek" role="dialog" aria-modal="true">
+    <div class="peek-card">
+      <div class="bee bee-peek mood-smile" data-bee></div>
+      <div class="peek-word" id="peek-word"></div>
+      <div class="peek-timer"><span id="peek-bar"></span></div>
+    </div>
+  </div>
+
+  <div class="confetti" id="confetti" aria-hidden="true"></div>
+
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
