@@ -1,5 +1,6 @@
 import { Pad } from './pad.js';
-import { recognize } from './recognize.js';
+import { recognizeMany } from './recognize.js';
+import { groupStrokes } from './segment.js';
 import { evaluate, hint, marks } from './feedback.js';
 import * as speech from './speech.js';
 import * as store from './words.js';
@@ -253,9 +254,13 @@ async function check() {
   updateButtons(true);
   $('checking').classList.remove('hidden');
   beeMood('think');
-  let candidates;
+  let candidates, groupCands;
   try {
-    candidates = await recognize(pad.toInk(), pad.width, pad.height);
+    // Read the whole word, and also each letter group separately (no dictionary help).
+    const ink = pad.toInk();
+    const groups = groupStrokes(ink);
+    const inks = groups.length > 1 ? [ink, ...groups] : [ink];
+    [candidates, ...groupCands] = await recognizeMany(inks, pad.width, pad.height);
   } catch (err) {
     console.warn('recognise failed', err);
     beeMood('oops', 'wiggle');
@@ -265,7 +270,7 @@ async function check() {
   } finally {
     $('checking').classList.add('hidden');
   }
-  const res = evaluate(w.w, candidates);
+  const res = evaluate(w.w, candidates, groupCands);
   if (res.status === 'correct') return correct();
   if (res.status === 'unsure') {
     session.unsure++;
