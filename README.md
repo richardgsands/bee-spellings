@@ -30,6 +30,7 @@ Everything is stored in the browser on that device (`localStorage`).
 - Plain HTML, CSS and ES modules, with no build step.
 - Pen strokes are sent to Google's handwriting recognition endpoint (`inputtools.google.com`). It needs an internet connection; only the stroke coordinates are sent.
 - Read-aloud uses the browser's built-in speech synthesis, preferring a British English voice.
+- A small service worker (`sw.js`) fetches the latest files on every load when online, so updates appear on the next reload. Saved copies are used when offline.
 
 ## Development
 
