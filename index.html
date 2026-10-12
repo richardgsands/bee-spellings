@@ -67,10 +67,10 @@
       <div class="bee bee-home mood-smile" data-bee></div>
       <h1>Spelling Bee</h1>
       <p class="tagline">Write your spellings with <strong>Bumble</strong>!</p>
-      <label class="list-picker">
-        <span>My words:</span>
-        <select id="home-list" aria-label="Choose which words to practise"></select>
-      </label>
+      <div class="list-picker">
+        <span>Which words? Tap to choose:</span>
+        <div class="list-chips" id="home-lists" role="group" aria-label="Which words to practise"></div>
+      </div>
       <div class="home-buttons">
         <button class="btn btn-big btn-honey" id="btn-start">Let's start! ✏️</button>
         <button class="btn btn-soft" id="btn-learn">👀 Look at my words</button>
@@ -89,8 +89,7 @@
       <h2>Tap a word to hear it</h2>
       <span></span>
     </header>
-    <p class="rule-note" id="learn-note"></p>
-    <div class="honeycomb" id="learn-words"></div>
+    <div id="learn-words"></div>
   </main>
 
   <!-- PRACTISE -->
@@ -150,7 +149,7 @@
       <section class="panel">
         <h3>Word lists</h3>
         <div class="row">
-          <label for="list-select">Practising:</label>
+          <label for="list-select">Edit list:</label>
           <select id="list-select"></select>
           <button class="btn btn-small" id="btn-new-list">＋ New list</button>
           <button class="btn btn-small btn-danger" id="btn-del-list">Delete list</button>
@@ -158,13 +157,9 @@
         <label class="field">List name <input id="list-name" type="text" autocomplete="off"></label>
         <label class="field">Spelling rule / note (shown on “Look at my words”)
           <textarea id="list-note" rows="2"></textarea></label>
-        <div class="row">
-          <button class="btn btn-small" id="btn-all-on">Tick all</button>
-          <button class="btn btn-small" id="btn-all-off">Untick all</button>
-          <span class="muted" id="word-count"></span>
-        </div>
+        <p class="muted" id="word-count"></p>
         <table class="words-table">
-          <thead><tr><th>Use</th><th>Word</th><th>Example sentence (optional, read aloud)</th><th></th></tr></thead>
+          <thead><tr><th>Word</th><th>Example sentence (optional, read aloud)</th><th></th></tr></thead>
           <tbody id="words-body"></tbody>
         </table>
         <label class="field">Add words (separate with spaces, commas or new lines)

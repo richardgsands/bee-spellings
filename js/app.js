@@ -74,37 +74,56 @@ function show(id) {
 }
 document.querySelectorAll('[data-go]').forEach((b) => b.addEventListener('click', () => { speech.stop(); show(b.dataset.go); }));
 
-function list() { return store.activeList(cfg); }
-function inScope() { return list().words.filter((w) => w.on && w.w); }
+function list() { return store.activeList(cfg); } // the list open in Grown-ups
+function inScope() { return store.practiceWords(cfg); }
 function persist() { store.save(cfg); speech.configure(cfg); pad?.setFingerMode(cfg.fingerMode); }
 
 function renderHome() {
-  const words = inScope();
-  const count = (l) => l.words.filter((w) => w.on && w.w).length;
-  $('home-list').innerHTML = cfg.lists
-    .map((l) => `<option value="${esc(l.id)}">${esc(l.name)} · ${count(l)} word${count(l) === 1 ? '' : 's'}</option>`)
-    .join('');
-  $('home-list').value = list().id;
-  $('btn-start').disabled = !words.length;
-  const tricky = store.trickyWords(cfg, list());
+  const box = $('home-lists');
+  box.innerHTML = '';
+  for (const l of cfg.lists) {
+    const n = l.words.filter((w) => w.w.trim()).length;
+    const b = document.createElement('button');
+    b.className = 'chip';
+    b.setAttribute('aria-pressed', String(cfg.selectedListIds.includes(l.id)));
+    b.innerHTML = `${esc(l.name)} <small>· ${n} word${n === 1 ? '' : 's'}</small>`;
+    b.addEventListener('click', () => toggleList(l.id));
+    box.append(b);
+  }
+  $('btn-start').disabled = !inScope().length;
+  const tricky = store.trickyWords(cfg);
   $('btn-tricky').classList.toggle('hidden', !tricky.length);
   $('btn-tricky').textContent = `🔁 Tricky words (${tricky.length})`;
 }
 
+function toggleList(id) {
+  const on = cfg.selectedListIds.includes(id);
+  if (on && cfg.selectedListIds.length === 1) return; // always practise at least one list
+  cfg.selectedListIds = on ? cfg.selectedListIds.filter((x) => x !== id) : [...cfg.selectedListIds, id];
+  persist();
+  renderHome();
+}
+
 function renderLearn() {
-  $('learn-note').textContent = list().note || '';
-  $('learn-note').classList.toggle('hidden', !list().note);
   const box = $('learn-words');
   box.innerHTML = '';
-  for (const w of inScope()) {
-    const b = document.createElement('button');
-    b.textContent = w.w;
-    b.addEventListener('click', async () => {
-      b.classList.add('speaking');
-      await speech.say(w.w, cfg.readSentence && w.sentence, w.w);
-      b.classList.remove('speaking');
-    });
-    box.append(b);
+  const words = inScope();
+  for (const l of store.selectedLists(cfg)) {
+    const section = document.createElement('section');
+    section.className = 'learn-list';
+    section.innerHTML = `<h3>${esc(l.name)}</h3>${l.note ? `<p class="rule-note">${esc(l.note)}</p>` : ''}<div class="honeycomb"></div>`;
+    const comb = section.querySelector('.honeycomb');
+    for (const w of words.filter((x) => x.listId === l.id)) {
+      const b = document.createElement('button');
+      b.textContent = w.w;
+      b.addEventListener('click', async () => {
+        b.classList.add('speaking');
+        await speech.say(w.w, cfg.readSentence && w.sentence, w.w);
+        b.classList.remove('speaking');
+      });
+      comb.append(b);
+    }
+    box.append(section);
   }
 }
 
@@ -188,7 +207,7 @@ function finishWord(score) {
   session.finished = true;
   session.results[session.i] = { w: w.w, score };
   session.points += score;
-  store.record(cfg, list().id, w.w, score);
+  store.record(cfg, w.listId, w.w, score);
   store.save(cfg);
   if (score) showJars();
   renderProgress();
@@ -378,12 +397,10 @@ function renderWordRows() {
   list().words.forEach((w, i) => {
     const tr = document.createElement('tr');
     tr.innerHTML = `
-      <td><input type="checkbox" ${w.on ? 'checked' : ''} aria-label="Use this word"></td>
       <td><input type="text" class="word-input" value="${esc(w.w)}" autocapitalize="off" autocorrect="off" spellcheck="false"></td>
       <td><input type="text" value="${esc(w.sentence || '')}" placeholder="—"></td>
       <td><button class="del" aria-label="Remove word">🗑️</button></td>`;
-    const [on, word, sentence] = tr.querySelectorAll('input');
-    on.addEventListener('change', () => { w.on = on.checked; persist(); countWords(); });
+    const [word, sentence] = tr.querySelectorAll('input');
     word.addEventListener('change', () => { w.w = word.value.trim(); persist(); });
     sentence.addEventListener('change', () => { w.sentence = sentence.value.trim(); persist(); });
     tr.querySelector('.del').addEventListener('click', () => { list().words.splice(i, 1); persist(); renderWordRows(); });
@@ -393,8 +410,8 @@ function renderWordRows() {
 }
 
 function countWords() {
-  const n = list().words.filter((w) => w.on).length;
-  $('word-count').textContent = `${n} of ${list().words.length} words ticked`;
+  const n = list().words.length;
+  $('word-count').textContent = `${n} word${n === 1 ? '' : 's'} in this list`;
 }
 
 function bindSettings() {
@@ -416,17 +433,16 @@ function bindSettings() {
     if (store.isBuiltIn(list().id)) cfg.removedBuiltIns.push(list().id);
     cfg.lists = cfg.lists.filter((l) => l.id !== list().id);
     cfg.activeListId = cfg.lists[0].id;
+    store.tidySelection(cfg);
     persist();
     renderSettings();
   });
-  $('btn-all-on').addEventListener('click', () => { list().words.forEach((w) => (w.on = true)); persist(); renderWordRows(); });
-  $('btn-all-off').addEventListener('click', () => { list().words.forEach((w) => (w.on = false)); persist(); renderWordRows(); });
   $('btn-add-words').addEventListener('click', () => {
     const have = new Set(list().words.map((w) => w.w.toLowerCase()));
     for (const w of store.parseWords($('add-words').value)) {
       if (have.has(w.toLowerCase())) continue;
       have.add(w.toLowerCase());
-      list().words.push({ w, sentence: '', on: true });
+      list().words.push({ w, sentence: '' });
     }
     $('add-words').value = '';
     persist();
@@ -455,7 +471,7 @@ function bindSettings() {
       const lists = (data.lists || []).filter((l) => l && l.id && l.name && Array.isArray(l.words));
       if (!lists.length) throw new Error('no lists');
       for (const l of lists) {
-        l.words = l.words.filter((w) => w && w.w).map((w) => ({ w: String(w.w), sentence: String(w.sentence || ''), on: w.on !== false }));
+        l.words = l.words.filter((w) => w && w.w).map((w) => ({ w: String(w.w), sentence: String(w.sentence || '') }));
         const i = cfg.lists.findIndex((x) => x.id === l.id);
         if (i >= 0) cfg.lists[i] = l; else cfg.lists.push(l);
       }
@@ -483,8 +499,7 @@ function bindSettings() {
 // ---------- wiring ----------
 $('btn-start').addEventListener('click', () => startSession(inScope()));
 $('btn-learn').addEventListener('click', () => show('learn'));
-$('home-list').addEventListener('change', (e) => { cfg.activeListId = e.target.value; persist(); renderHome(); });
-$('btn-tricky').addEventListener('click', () => startSession(store.trickyWords(cfg, list())));
+$('btn-tricky').addEventListener('click', () => startSession(store.trickyWords(cfg)));
 $('btn-again').addEventListener('click', () => startSession(inScope()));
 $('btn-results-tricky').addEventListener('click', () => {
   const tricky = new Set(session.results.filter((r) => r.score < 2).map((r) => r.w));

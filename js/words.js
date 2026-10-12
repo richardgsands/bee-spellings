@@ -53,20 +53,21 @@ const builtInLists = () => [
     id: 'y3-autumn1-week4',
     name: 'Y3 Autumn 1 – Week 4',
     note: 'Adding -ing, -ed, -er and -est. A final y changes to i before -es, -ed, -er and -est, but stays before -ing (no double i!).',
-    words: y3Week4.map(([w, sentence]) => ({ w, sentence, on: true })),
+    words: y3Week4.map(([w, sentence]) => ({ w, sentence })),
   },
   {
     id: 'y3-autumn1-week5',
     name: 'Y3 Autumn 1 – Week 5',
     note: 'Adding -ing, -ed, -er and -en to longer words. If the end of the word is stressed (for-GET, be-GIN), double the last letter: forgetting. If it isn\'t (GAR-den, LIM-it), just add the ending: gardening.',
-    words: y3Week5.map(([w, sentence]) => ({ w, sentence, on: true })),
+    words: y3Week5.map(([w, sentence]) => ({ w, sentence })),
   },
 ];
 
 export function defaultConfig() {
   return {
     version: 1,
-    activeListId: 'y3-autumn1-week5',
+    selectedListIds: ['y3-autumn1-week5'], // the weeks being practised
+    activeListId: 'y3-autumn1-week5', // the list open for editing in Grown-ups
     perGo: 10,
     fingerMode: 'auto',
     readSentence: true,
@@ -87,6 +88,9 @@ export function load() {
       for (const l of builtInLists()) {
         if (!cfg.lists.some((x) => x.id === l.id) && !cfg.removedBuiltIns.includes(l.id)) cfg.lists.push(l);
       }
+      // Older saves picked a single list to practise.
+      if (!Array.isArray(JSON.parse(raw).selectedListIds)) cfg.selectedListIds = [cfg.activeListId];
+      tidySelection(cfg);
       return cfg;
     }
   } catch { /* fall through to defaults */ }
@@ -134,7 +138,31 @@ export function record(cfg, listId, word, score) {
   w.best = Math.max(w.best, score);
 }
 
-export function trickyWords(cfg, list) {
-  const s = cfg.stats[list.id] || {};
-  return list.words.filter((x) => x.on && s[x.w] && s[x.w].last < 2);
+// Keep the selection pointing at lists that exist, and never empty.
+export function tidySelection(cfg) {
+  cfg.selectedListIds = cfg.selectedListIds.filter((id) => cfg.lists.some((l) => l.id === id));
+  if (!cfg.selectedListIds.length && cfg.lists.length) cfg.selectedListIds = [cfg.lists[0].id];
+}
+
+export function selectedLists(cfg) {
+  return cfg.lists.filter((l) => cfg.selectedListIds.includes(l.id));
+}
+
+// Every word in the selected lists (a word in two lists is only practised once).
+export function practiceWords(cfg) {
+  const seen = new Set();
+  const out = [];
+  for (const l of selectedLists(cfg)) {
+    for (const x of l.words) {
+      const key = x.w.trim().toLowerCase();
+      if (!key || seen.has(key)) continue;
+      seen.add(key);
+      out.push({ w: x.w.trim(), sentence: x.sentence, listId: l.id });
+    }
+  }
+  return out;
+}
+
+export function trickyWords(cfg) {
+  return practiceWords(cfg).filter((x) => cfg.stats[x.listId]?.[x.w]?.last < 2);
 }
