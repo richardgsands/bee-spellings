@@ -226,7 +226,7 @@ h3 { font-size: 22px; color: var(--brown); margin-bottom: 12px; }
 /* ---------- practise ---------- */
 #practise.active {
   display: grid;
-  grid-template-rows: auto auto 1fr auto;
+  grid-template-rows: auto auto auto 1fr;
   gap: 10px;
   overflow: hidden;
 }
@@ -285,7 +285,7 @@ h3 { font-size: 22px; color: var(--brown); margin-bottom: 12px; }
 .tiles.read span.missing { text-decoration: none; }
 .tiles.target span.bad { background: var(--leaf-pale); color: var(--leaf); font-weight: 700; }
 
-.pad-wrap { position: relative; min-height: 220px; max-height: 440px; width: 100%; height: 100%; align-self: center; }
+.pad-wrap { position: relative; min-height: 220px; max-height: 440px; width: 100%; height: 100%; align-self: end; }
 .pad {
   position: absolute;
   inset: 0;
