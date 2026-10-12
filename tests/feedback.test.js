@@ -54,6 +54,25 @@ test('double the consonant', () => {
   assert.equal(rule('patting', 'pating'), 'double');
 });
 
+test('week 5: double only when the end is stressed', () => {
+  assert.equal(rule('forgetting', 'forgeting'), 'double');
+  assert.match(hint('forgetting', 'forgeting').speak, /stressed/);
+  assert.equal(rule('beginning', 'begining'), 'double');
+  assert.equal(rule('preferred', 'prefered'), 'double');
+  assert.equal(rule('forgotten', 'forgoten'), 'double');
+  assert.equal(rule('beginner', 'beginer'), 'double');
+  assert.equal(rule('footballer', 'footbaler'), 'double');
+  assert.match(hint('patted', 'pated').speak, /Short vowel/);
+  assert.equal(rule('limiting', 'limitting'), 'no-double');
+  assert.equal(rule('gardening', 'gardenning'), 'no-double');
+  assert.equal(rule('limited', 'limitted'), 'no-double');
+  assert.equal(rule('limitation', 'limittation'), 'no-double');
+  assert.match(hint('gardener', 'gardenner').speak, /isn't stressed/);
+  assert.equal(rule('writing', 'writting'), 'no-double');
+  assert.match(hint('reading', 'readding').speak, /Long vowel/);
+  assert.equal(rule('writing', 'writeing'), 'drop-e-ing');
+});
+
 test('word already ends in e', () => {
   assert.equal(rule('nicer', 'niceer'), 'drop-e');
   assert.equal(rule('nicest', 'niceest'), 'drop-e');
@@ -72,7 +91,9 @@ test('endings and generic hints', () => {
 });
 
 test('hints never reveal the whole word', () => {
-  const words = ['flies', 'copy', 'copier', 'happiest', 'nicest', 'tries', 'copying', 'happy', 'nice', 'pat',
+  const words = ['forgetting', 'beginning', 'preferred', 'limiting', 'footballer', 'forgotten', 'beginner',
+    'gardening', 'limited', 'writer', 'writing', 'reading', 'reader', 'cleaning', 'cleaner', 'prefer', 'gardener',
+    'limitation', 'begin', 'forget', 'flies', 'copy', 'copier', 'happiest', 'nicest', 'tries', 'copying', 'happy', 'nice', 'pat',
     'replies', 'copied', 'happier', 'nicer', 'patted', 'patting', 'walked', 'kinder', 'walk', 'kind'];
   const misspell = (w) => w.slice(0, -1);
   for (const w of words) {

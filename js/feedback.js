@@ -116,6 +116,8 @@ export function marks(target, read) {
 const b = (s) => `<b>${s}</b>`;
 const plain = (html) => html.replace(/<[^>]+>/g, '').replace(/-(\w+)/g, ' $1');
 
+const syllables = (s) => (s.match(/[aeiouy]+/g) || []).length;
+
 function where(index, length) {
   if (index < length / 3) return 'near the beginning';
   if (index >= (2 * length) / 3) return 'near the end';
@@ -142,10 +144,32 @@ export function hint(target, read) {
     return out('keep-y-ing', `Keep the ${b('y')} when you add ${b('-ing')} – we never want ${b('ii')}!`);
   }
 
-  // double the final consonant after a short vowel (pat -> patted, patting)
-  m = t.match(/^(.*[aeiou])([bdgklmnprt])\2(ed|ing|er|est)$/);
+  // double the final consonant after a short vowel (pat -> patting)
+  // or a stressed last syllable (forget -> forgetting, prefer -> preferred)
+  m = t.match(/^(.*[aeiou])([bdgklmnprt])\2(ed|ing|er|est|en)$/);
   if (m && r.startsWith(m[1] + m[2]) && !r.startsWith(m[1] + m[2] + m[2])) {
-    return out('double', `Short vowel sound? Double the last letter before adding ${b('-' + m[3])}.`);
+    const end = b('-' + m[3]);
+    if (m[2] === 'l') return out('double', `Don't forget the double ${b('ll')}!`);
+    if (syllables(m[1]) > 1) {
+      return out('double', `The end of this word is stressed – say it out loud! So double the last letter before adding ${end}.`);
+    }
+    return out('double', `Short vowel sound? Double the last letter before adding ${end}.`);
+  }
+
+  // no doubling when the last syllable isn't stressed (garden -> gardening, limit -> limited)
+  // or the vowel sound is long (read -> reading, write -> writer)
+  m = t.match(/^(.*[aeiou])([bdgkmnprt])(ed|ing|er|en|ation)$/);
+  if (m && r.startsWith(m[1] + m[2] + m[2])) {
+    if (syllables(m[1]) > 1) {
+      return out('no-double', `The end of this word isn't stressed – say it out loud! So don't double the last letter.`);
+    }
+    return out('no-double', `Long vowel sound, so you only need one ${b(m[2])}.`);
+  }
+
+  // drop the e before -ing (write -> writing)
+  m = t.match(/^(.*[^aeiou])ing$/);
+  if (m && r.startsWith(m[1] + 'eing')) {
+    return out('drop-e-ing', `When a word ends in ${b('e')}, take the ${b('e')} off before adding ${b('-ing')}.`);
   }
 
   // word already ends in e (nice -> nicer, nicest)

@@ -80,7 +80,11 @@ function persist() { store.save(cfg); speech.configure(cfg); pad?.setFingerMode(
 
 function renderHome() {
   const words = inScope();
-  $('home-list').textContent = `${list().name} · ${words.length} word${words.length === 1 ? '' : 's'}`;
+  const count = (l) => l.words.filter((w) => w.on && w.w).length;
+  $('home-list').innerHTML = cfg.lists
+    .map((l) => `<option value="${esc(l.id)}">${esc(l.name)} · ${count(l)} word${count(l) === 1 ? '' : 's'}</option>`)
+    .join('');
+  $('home-list').value = list().id;
   $('btn-start').disabled = !words.length;
   const tricky = store.trickyWords(cfg, list());
   $('btn-tricky').classList.toggle('hidden', !tricky.length);
@@ -409,6 +413,7 @@ function bindSettings() {
   });
   $('btn-del-list').addEventListener('click', () => {
     if (cfg.lists.length < 2 || !confirm(`Delete the list “${list().name}”?`)) return;
+    if (store.isBuiltIn(list().id)) cfg.removedBuiltIns.push(list().id);
     cfg.lists = cfg.lists.filter((l) => l.id !== list().id);
     cfg.activeListId = cfg.lists[0].id;
     persist();
@@ -478,6 +483,7 @@ function bindSettings() {
 // ---------- wiring ----------
 $('btn-start').addEventListener('click', () => startSession(inScope()));
 $('btn-learn').addEventListener('click', () => show('learn'));
+$('home-list').addEventListener('change', (e) => { cfg.activeListId = e.target.value; persist(); renderHome(); });
 $('btn-tricky').addEventListener('click', () => startSession(store.trickyWords(cfg, list())));
 $('btn-again').addEventListener('click', () => startSession(inScope()));
 $('btn-results-tricky').addEventListener('click', () => {

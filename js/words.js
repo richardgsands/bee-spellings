@@ -25,23 +25,55 @@ const y3Week4 = [
   ['kind', 'It was kind of you to help.'],
 ];
 
+const y3Week5 = [
+  ['forgetting', 'I keep forgetting my PE kit.'],
+  ['beginning', 'The beginning of the story was exciting.'],
+  ['preferred', 'She preferred apples to bananas.'],
+  ['limiting', 'Mum is limiting my screen time.'],
+  ['footballer', 'The footballer scored a goal.'],
+  ['forgotten', 'I have forgotten my lunchbox.'],
+  ['beginner', 'He is a beginner at swimming.'],
+  ['gardening', 'Grandad loves gardening in the spring.'],
+  ['limited', 'There are only a limited number of tickets.'],
+  ['writer', 'The writer made up a funny story.'],
+  ['writing', 'I am writing a letter to my friend.'],
+  ['reading', 'We are reading a book about bees.'],
+  ['reader', 'She is a very good reader.'],
+  ['cleaning', 'We are cleaning the classroom.'],
+  ['cleaner', 'The cleaner mopped the floor.'],
+  ['prefer', 'I prefer honey to jam.'],
+  ['gardener', 'The gardener planted some flowers.'],
+  ['limitation', 'Being tired was the only limitation on our fun.'],
+  ['begin', 'Let us begin the race!'],
+  ['forget', 'Do not forget your coat.'],
+];
+
+const builtInLists = () => [
+  {
+    id: 'y3-autumn1-week4',
+    name: 'Y3 Autumn 1 – Week 4',
+    note: 'Adding -ing, -ed, -er and -est. A final y changes to i before -es, -ed, -er and -est, but stays before -ing (no double i!).',
+    words: y3Week4.map(([w, sentence]) => ({ w, sentence, on: true })),
+  },
+  {
+    id: 'y3-autumn1-week5',
+    name: 'Y3 Autumn 1 – Week 5',
+    note: 'Adding -ing, -ed, -er and -en to longer words. If the end of the word is stressed (for-GET, be-GIN), double the last letter: forgetting. If it isn\'t (GAR-den, LIM-it), just add the ending: gardening.',
+    words: y3Week5.map(([w, sentence]) => ({ w, sentence, on: true })),
+  },
+];
+
 export function defaultConfig() {
   return {
     version: 1,
-    activeListId: 'y3-autumn1-week4',
+    activeListId: 'y3-autumn1-week5',
     perGo: 10,
     fingerMode: 'auto',
     readSentence: true,
     voiceURI: '',
     rate: 0.85,
-    lists: [
-      {
-        id: 'y3-autumn1-week4',
-        name: 'Y3 Autumn 1 – Week 4',
-        note: 'Adding -ing, -ed, -er and -est. A final y changes to i before -es, -ed, -er and -est, but stays before -ing (no double i!).',
-        words: y3Week4.map(([w, sentence]) => ({ w, sentence, on: true })),
-      },
-    ],
+    lists: builtInLists(),
+    removedBuiltIns: [],
     stats: {},
   };
 }
@@ -49,13 +81,24 @@ export function defaultConfig() {
 export function load() {
   try {
     const raw = localStorage.getItem(KEY);
-    if (raw) return { ...defaultConfig(), ...JSON.parse(raw) };
+    if (raw) {
+      const cfg = { ...defaultConfig(), ...JSON.parse(raw) };
+      // Bring in built-in lists added since this device last saved (unless a grown-up deleted them).
+      for (const l of builtInLists()) {
+        if (!cfg.lists.some((x) => x.id === l.id) && !cfg.removedBuiltIns.includes(l.id)) cfg.lists.push(l);
+      }
+      return cfg;
+    }
   } catch { /* fall through to defaults */ }
   return defaultConfig();
 }
 
 export function save(cfg) {
   try { localStorage.setItem(KEY, JSON.stringify(cfg)); } catch { /* private mode etc. */ }
+}
+
+export function isBuiltIn(id) {
+  return builtInLists().some((l) => l.id === id);
 }
 
 export function activeList(cfg) {
