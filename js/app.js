@@ -413,6 +413,13 @@ function renderSettings() {
   renderWordRows();
 }
 
+// "claude-haiku-5-5" -> "Claude Haiku 5.5"
+function modelName(id) {
+  const m = /^claude-([a-z]+)-(\d+)(?:-(\d+))?/.exec(id || '');
+  if (!m) return id || 'Claude';
+  return `Claude ${m[1][0].toUpperCase()}${m[1].slice(1)} ${m[2]}${m[3] ? '.' + m[3] : ''}`;
+}
+
 // Send a small typed sample to the Claude reader to check the code works.
 async function testReader() {
   const status = (text) => { $('reader-status').textContent = text; };
@@ -425,7 +432,7 @@ async function testReader() {
   status('Testing…');
   try {
     const r = await readHandwriting(c.toDataURL('image/png').split(',')[1]);
-    status(`Working ✓ – Claude read “${r.read}”.`);
+    status(`Working ✓ – ${modelName(r.model)} read “${r.read}”.`);
   } catch (err) {
     const why = { rate_limited: 'too many checks – wait a minute' }[err.code];
     status(`Not working: ${why || err.message}. Bumble will use Google instead.`);

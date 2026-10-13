@@ -26,7 +26,7 @@ export class ReaderError extends Error {
   }
 }
 
-// Returns { read, unclear }.
+// Returns { read, unclear, model }.
 export async function readHandwriting(png, { timeoutMs = 15000 } = {}) {
   return withTimeout(timeoutMs, async (signal) => {
     const res = await fetch(READER_URL, {
@@ -37,7 +37,7 @@ export async function readHandwriting(png, { timeoutMs = 15000 } = {}) {
     });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) throw new ReaderError(data.error || 'http_' + res.status);
-    return { read: String(data.read ?? ''), unclear: !!data.unclear };
+    return { read: String(data.read ?? ''), unclear: !!data.unclear, model: String(data.model ?? '') };
   });
 }
 

@@ -103,7 +103,7 @@ export default {
       const block = response.content.find((b) => b.type === "text");
       if (!block || block.type !== "text") return json({ error: "no_text" }, 502, headers);
       const parsed = JSON.parse(block.text) as { text: string; unclear: boolean };
-      return json({ read: parsed.text, unclear: parsed.unclear }, 200, headers);
+      return json({ read: parsed.text, unclear: parsed.unclear, model: response.model }, 200, headers);
     } catch (err) {
       if (err instanceof Anthropic.RateLimitError) return json({ error: "busy" }, 503, headers);
       if (err instanceof Anthropic.APIError) {
