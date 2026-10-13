@@ -12,7 +12,7 @@ interface Env {
   LIMITER: { limit(options: { key: string }): Promise<{ success: boolean }> };
 }
 
-const MODEL = "claude-opus-5-5";
+const MODEL = "claude-haiku-5-5";
 const MAX_IMAGE_BYTES = 400_000;
 
 const SYSTEM = `You transcribe a primary-school child's handwriting for a spelling test.
@@ -83,11 +83,9 @@ export default {
 
     const client = new Anthropic({ apiKey: env.ANTHROPIC_API_KEY });
     try {
-      const response = await client.beta.messages.create({
+      const response = await client.messages.create({
         model: MODEL,
         max_tokens: 2000,
-        betas: ["server-side-fallback-2026-07-01"],
-        fallbacks: "default",
         system: SYSTEM,
         output_config: { effort: "low", format: { type: "json_schema", schema: SCHEMA } },
         messages: [
