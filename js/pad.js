@@ -181,4 +181,32 @@ export class Pad {
       s.pts.map((p) => Math.round(p.t - this.t0)),
     ]);
   }
+
+  // Just the writing, black on white, cropped and scaled: a clean picture for the reader.
+  toPNGBase64({ maxWidth = 900, maxHeight = 360, margin = 24 } = {}) {
+    const pts = this.strokes.flatMap((s) => s.pts);
+    if (!pts.length) return '';
+    const xs = pts.map((p) => p.x), ys = pts.map((p) => p.y);
+    const x0 = Math.min(...xs) - margin, y0 = Math.min(...ys) - margin;
+    const w = Math.max(...xs) + margin - x0, h = Math.max(...ys) + margin - y0;
+    const scale = Math.min(maxWidth / w, maxHeight / h, 2);
+    const c = document.createElement('canvas');
+    c.width = Math.round(w * scale);
+    c.height = Math.round(h * scale);
+    const ctx = c.getContext('2d');
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(0, 0, c.width, c.height);
+    ctx.setTransform(scale, 0, 0, scale, -x0 * scale, -y0 * scale);
+    ctx.strokeStyle = ctx.fillStyle = '#000';
+    ctx.lineCap = ctx.lineJoin = 'round';
+    ctx.lineWidth = 5;
+    for (const s of this.strokes) {
+      ctx.beginPath();
+      ctx.moveTo(s.pts[0].x, s.pts[0].y);
+      for (const p of s.pts.slice(1)) ctx.lineTo(p.x, p.y);
+      if (s.pts.length === 1) ctx.lineTo(s.pts[0].x + 0.1, s.pts[0].y);
+      ctx.stroke();
+    }
+    return c.toDataURL('image/png').split(',')[1];
+  }
 }

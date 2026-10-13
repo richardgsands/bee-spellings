@@ -114,6 +114,12 @@
       <div class="bubble" id="bubble" aria-live="polite">
         <div id="bubble-text"></div>
         <div id="reveal" class="reveal hidden"></div>
+        <div class="read-row">
+          <span id="bubble-read" class="read-line hidden"></span>
+          <button class="misread-btn hidden" id="btn-misread" aria-label="Grown-up: press and hold if Bumble misread the writing">
+            <span class="hold-ring"></span>👩 Bumble misread it <small>(grown-up: hold)</small>
+          </button>
+        </div>
       </div>
     </section>
 
@@ -168,6 +174,17 @@
       </section>
 
       <section class="panel">
+        <h3>Handwriting checking</h3>
+        <p class="muted">With the family access code, Bumble reads the writing with Claude, which copies the letters exactly as written (so spelling mistakes aren't “auto-corrected”). Without it, Google's free reader is used.</p>
+        <div class="row">
+          <label for="access-code">Access code</label>
+          <input id="access-code" type="text" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">
+          <button class="btn btn-small" id="btn-test-reader">Test</button>
+        </div>
+        <p class="muted" id="reader-status"></p>
+      </section>
+
+      <section class="panel">
         <h3>Practice</h3>
         <label class="field-inline">Words per go
           <select id="per-go">
@@ -198,7 +215,7 @@
           <button class="btn btn-small btn-danger" id="btn-reset">Reset everything</button>
         </div>
       </section>
-      <p class="muted small">Handwriting is read by Google's handwriting recognition service, so an internet connection is needed. Only the pen strokes are sent.</p>
+      <p class="muted small">Checking handwriting needs an internet connection. With the access code, a picture of just the written word is sent to Claude; otherwise the pen strokes are sent to Google.</p>
     </div>
   </main>
 

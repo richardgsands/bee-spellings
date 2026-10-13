@@ -1,7 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { norm, evaluate, align, marks, hint, spellable, letterReading } from '../js/feedback.js';
-import { groupStrokes } from '../js/segment.js';
+import { norm, evaluate, evaluateRead, align, marks, hint } from '../js/feedback.js';
 
 test('norm lowercases, strips spaces and stray punctuation', () => {
   assert.equal(norm('  Happ ier. '), 'happier');
@@ -102,40 +101,11 @@ test('hints never reveal the whole word', () => {
   }
 });
 
-test('letters read one by one catch dictionary "corrections"', () => {
-  const walc = [['w', 'W'], ['a', 'A'], ['l', '1', '|'], ['C', 'c', '(', '[', 'E']];
-  const res = evaluate('walk', ['walk', 'walc'], walc);
-  assert.equal(res.status, 'wrong');
-  assert.equal(res.read, 'walc');
-  assert.equal(hint('walk', res.read).rule, 'one-letter');
-});
-
-test('letter check accepts correct writing, confusable shapes and joined letters', () => {
-  assert.equal(evaluate('walk', ['walk'], [['w'], ['a'], ['l'], ['k', 'K']]).status, 'correct');
-  assert.equal(evaluate('walk', ['walk'], [['w'], ['a'], ['1', '|'], ['k']]).status, 'correct');
-  assert.equal(evaluate('walk', ['walk'], [['wa', 'wo'], ['lk', 'Ik']]).status, 'correct');
-  assert.equal(evaluate('kind', ['kind'], [['k'], ['i', 'l'], ['n', 'h'], ['d', 'a']]).status, 'correct');
-  assert.equal(evaluate('kind', ['kind'], [['k'], ['i'], ['.'], ['n'], ['d']]).status, 'correct');
-  assert.equal(evaluate('walk', ['walk'], []).status, 'correct');
-  assert.equal(evaluate('walk', ['walk'], [['walk']]).status, 'correct');
-});
-
-test('letters that clearly spell the word make a dictionary mismatch "unsure", not wrong', () => {
-  assert.equal(evaluate('walk', ['wall'], [['w'], ['a'], ['l'], ['k']]).status, 'unsure');
-  assert.equal(evaluate('walk', ['wall'], [['w'], ['a'], ['l'], ['l', 'k']]).status, 'wrong');
-});
-
-test('spellable only uses the top three distinct readings per letter', () => {
-  assert.equal(spellable('cat', [['c'], ['o', 'O', 'a'], ['t']]), true);
-  assert.equal(spellable('cat', [['c'], ['o', 'O', '0', 'u', 'e', 'a'], ['t']]), false);
-  assert.equal(letterReading([['C', 'c'], ['|'], ['t']]), 'clt');
-});
-
-test('groupStrokes keeps overlapping strokes together and splits on gaps', () => {
-  const s = (x0, x1) => [[x0, x1], [0, 10], [0, 1]];
-  const ink = [s(0, 20), s(30, 50), s(40, 40), s(30, 55), s(80, 100)];
-  const groups = groupStrokes(ink);
-  assert.equal(groups.length, 3);
-  assert.equal(groups[1].length, 3);
-  assert.equal(groupStrokes([s(0, 10)]).length, 1);
+test('evaluateRead: exact letters decide, unclear readings ask for a neater go', () => {
+  assert.deepEqual(evaluateRead('beginning', 'beginning'), { status: 'correct', read: 'beginning' });
+  assert.equal(evaluateRead('beginning', ' Beginning. ').status, 'correct');
+  assert.deepEqual(evaluateRead('walk', 'walc'), { status: 'wrong', read: 'walc' });
+  assert.equal(evaluateRead('walk', 'walc', true).status, 'unsure');
+  assert.equal(evaluateRead('walk', '').status, 'empty');
+  assert.equal(hint('walk', evaluateRead('walk', 'walc').read).rule, 'one-letter');
 });

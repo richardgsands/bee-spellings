@@ -1,11 +1,11 @@
 import { Pad } from './pad.js';
-import { recognizeMany } from './recognize.js';
-import { groupStrokes } from './segment.js';
-import { evaluate, hint, marks } from './feedback.js';
+import { readHandwriting, recognize, READER_URL } from './recognize.js';
+import { evaluate, evaluateRead, hint, marks } from './feedback.js';
 import * as speech from './speech.js';
 import * as store from './words.js';
 
 const $ = (id) => document.getElementById(id);
+const readerConfigured = () => !READER_URL.includes('REPLACE_ME');
 const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
 
@@ -155,6 +155,8 @@ function presentWord() {
   Object.assign(session, { attempt: 1, unsure: 0, peeked: false, revealed: false, finished: false });
   pad.clear();
   $('reveal').classList.add('hidden');
+  $('bubble-read').classList.add('hidden');
+  $('btn-misread').classList.add('hidden');
   $('btn-next').classList.add('hidden');
   $('btn-check').classList.remove('hidden');
   renderProgress();
@@ -224,6 +226,7 @@ function correct() {
   const jar = score === 2 ? 'a whole jar of honey 🍯' : 'half a jar of honey 🍯';
   setBubble(`${html} You spelled <b>${esc(w.w)}</b> correctly and won ${jar}!`, { good: true });
   $('reveal').classList.add('hidden');
+  $('btn-misread').classList.add('hidden');
   chime();
   confetti();
   speech.say(spoken, `You spelled ${w.w} correctly!`);
@@ -266,6 +269,25 @@ function wrong(read) {
   updateButtons();
 }
 
+// Read the writing: Claude (exact letters) when an access code is set, else Google.
+async function readPad(target) {
+  const code = (cfg.accessCode || '').trim();
+  if (code && readerConfigured()) {
+    try {
+      const r = await readHandwriting(pad.toPNGBase64(), code);
+      return evaluateRead(target, r.read, r.unclear);
+    } catch (err) {
+      console.warn('Claude reader failed, using Google instead', err);
+    }
+  }
+  return evaluate(target, await recognize(pad.toInk(), pad.width, pad.height));
+}
+
+function showRead(read) {
+  $('bubble-read').innerHTML = `Bumble read: <b>${esc(read)}</b>`;
+  $('bubble-read').classList.toggle('hidden', !read);
+}
+
 async function check() {
   if (!session || session.finished) return;
   if (pad.isEmpty) {
@@ -277,13 +299,9 @@ async function check() {
   updateButtons(true);
   $('checking').classList.remove('hidden');
   beeMood('think');
-  let candidates, groupCands;
+  let res;
   try {
-    // Read the whole word, and also each letter group separately (no dictionary help).
-    const ink = pad.toInk();
-    const groups = groupStrokes(ink);
-    const inks = groups.length > 1 ? [ink, ...groups] : [ink];
-    [candidates, ...groupCands] = await recognizeMany(inks, pad.width, pad.height);
+    res = await readPad(w.w);
   } catch (err) {
     console.warn('recognise failed', err);
     beeMood('oops', 'wiggle');
@@ -293,14 +311,16 @@ async function check() {
   } finally {
     $('checking').classList.add('hidden');
   }
-  const res = evaluate(w.w, candidates, groupCands);
+  session.checkedAttempt = session.attempt;
   if (res.status === 'correct') return correct();
+  $('btn-misread').classList.remove('hidden');
   if (res.status === 'unsure') {
     session.unsure++;
     if (session.unsure >= 2) return correct();
     beeMood('think', 'wiggle');
     pad.dim();
     setBubble(`I <i>think</i> that's right, but my bee-eyes couldn't quite read it. Can you write it again a bit neater? 🔍`);
+    showRead(res.read);
     speech.say(`I think that's right, but my bee eyes couldn't quite read it. Can you write it again a bit neater?`);
     return updateButtons();
   }
@@ -312,6 +332,18 @@ async function check() {
     return updateButtons();
   }
   wrong(res.read);
+  showRead(res.read);
+}
+
+// A grown-up says the writing was right and Bumble misread it.
+function misread() {
+  if (!session) return;
+  const prev = session.results[session.i];
+  if (prev) session.points -= prev.score; // the word had already been scored as "not yet"
+  session.finished = false;
+  session.attempt = session.checkedAttempt || session.attempt;
+  $('bubble-read').classList.add('hidden');
+  correct();
 }
 
 function next() {
@@ -379,9 +411,39 @@ function renderSettings() {
   $('read-sentence').checked = cfg.readSentence;
   $('finger-mode').value = cfg.fingerMode;
   $('rate').value = cfg.rate;
+  $('access-code').value = cfg.accessCode || '';
+  renderReaderStatus();
   $('btn-del-list').disabled = cfg.lists.length < 2;
   renderVoices();
   renderWordRows();
+}
+
+function renderReaderStatus(message) {
+  const status = !readerConfigured()
+    ? 'The Claude reader isn’t set up yet – using Google.'
+    : (cfg.accessCode || '').trim() ? 'Using Claude.' : 'Using Google (no access code set).';
+  $('reader-status').textContent = message || status;
+}
+
+// Send a small typed sample to the Claude reader to check the code works.
+async function testReader() {
+  if (!readerConfigured()) return renderReaderStatus();
+  const code = (cfg.accessCode || '').trim();
+  if (!code) return renderReaderStatus('Enter the access code first.');
+  const c = document.createElement('canvas');
+  c.width = 360; c.height = 140;
+  const ctx = c.getContext('2d');
+  ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, c.width, c.height);
+  ctx.fillStyle = '#000'; ctx.font = '80px Andika, sans-serif';
+  ctx.fillText('bees', 40, 100);
+  renderReaderStatus('Testing…');
+  try {
+    const r = await readHandwriting(c.toDataURL('image/png').split(',')[1], code);
+    renderReaderStatus(`Working ✓ – Claude read “${r.read}”.`);
+  } catch (err) {
+    const why = { bad_code: 'the access code is wrong', rate_limited: 'too many checks – wait a minute' }[err.code];
+    renderReaderStatus(`Not working: ${why || err.message}. Bumble will use Google instead.`);
+  }
 }
 
 function renderVoices() {
@@ -448,6 +510,8 @@ function bindSettings() {
     persist();
     renderWordRows();
   });
+  $('access-code').addEventListener('change', (e) => { cfg.accessCode = e.target.value.trim(); persist(); renderReaderStatus(); });
+  $('btn-test-reader').addEventListener('click', testReader);
   $('per-go').addEventListener('change', (e) => { cfg.perGo = Number(e.target.value); persist(); });
   $('read-sentence').addEventListener('change', (e) => { cfg.readSentence = e.target.checked; persist(); });
   $('finger-mode').addEventListener('change', (e) => { cfg.fingerMode = e.target.value; persist(); });
@@ -519,6 +583,7 @@ $('btn-quit').addEventListener('click', () => {
   show('home');
 });
 holdButton($('btn-grownups'), 1500, () => show('settings'));
+holdButton($('btn-misread'), 1500, misread);
 bindSettings();
 speech.configure(cfg);
 show('home');

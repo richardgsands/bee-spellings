@@ -1,0 +1,15 @@
+# Cloudflare Worker that reads Spelling Bee handwriting with Claude.
+# Secrets (set with `npx wrangler secret put NAME`): ANTHROPIC_API_KEY, APP_CODE
+name = "bee-reader"
+main = "src/index.ts"
+compatibility_date = "2026-10-01"
+
+[vars]
+ALLOWED_ORIGINS = "https://richardgsands.github.io,http://localhost:8765"
+
+[[ratelimits]]
+name = "LIMITER"
+namespace_id = "1001"
+  [ratelimits.simple]
+  limit = 20
+  period = 60

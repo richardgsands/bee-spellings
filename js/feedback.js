@@ -9,55 +9,27 @@ export function norm(s) {
     .replace(/^[^a-z']+|[^a-z']+$/g, '');
 }
 
-// Per-letter candidates: shapes the recogniser can't tell apart from letters count as those letters.
-function normLetters(s) {
-  return norm(String(s ?? '').replace(/[|1!]/g, 'l').replace(/0/g, 'o'));
+// Claude's reading: the letters exactly as written.
+//   correct – the letters spell the word
+//   unsure  – they don't, but the reader flagged a letter it couldn't make out
+//   wrong   – they spell something else
+//   empty   – nothing readable
+export function evaluateRead(target, read, unclear = false) {
+  const t = norm(target), r = norm(read);
+  if (!r) return { status: 'empty', read: '' };
+  if (r === t) return { status: 'correct', read: r };
+  return { status: unclear ? 'unsure' : 'wrong', read: r };
 }
 
-function topDistinct(cands, k) {
-  return [...new Set(cands.map(normLetters).filter(Boolean))].slice(0, k);
-}
-
-// What the letters say when each group is read on its own (no whole-word dictionary help).
-export function letterReading(groupCands) {
-  return groupCands.map((c) => topDistinct(c, 1)[0] || '').join('');
-}
-
-// Can the target be spelled by taking one of the top-k readings from each letter group, in order?
-export function spellable(target, groupCands, k = 3) {
-  const t = norm(target);
-  let reach = new Set([0]);
-  for (const cands of groupCands) {
-    const options = topDistinct(cands, k);
-    if (!options.length) continue; // nothing readable in this group (e.g. a stray dot)
-    const next = new Set();
-    for (const p of reach) {
-      for (const o of options) if (t.startsWith(o, p)) next.add(p + o.length);
-    }
-    if (!next.size) return false;
-    reach = next;
-  }
-  return reach.has(t.length);
-}
-
-// Decide whether the recogniser's candidates match the target word.
-//   correct – top candidate is the word
-//   unsure  – the word is a lower-ranked candidate, or only the letters spell it (writing was hard to read)
-//   wrong   – the word isn't in the top candidates
-//   empty   – nothing recognised
-// The whole-word recogniser uses a dictionary, so it can "correct" a misspelling into the
-// real word (walc -> walk). When the writing splits into several letter groups, `groupCands`
-// holds each group's own candidates, and a match must also be spellable letter by letter.
-export function evaluate(target, candidates, groupCands = []) {
+// Google's ranked candidates (fallback reader). Its dictionary can "correct"
+// misspellings, so this is less strict than evaluateRead.
+//   unsure – the word is only a lower-ranked candidate (writing was hard to read)
+export function evaluate(target, candidates) {
   const t = norm(target);
   const cands = (candidates || []).map(norm).filter(Boolean);
   if (!cands.length) return { status: 'empty', read: '' };
-  const checkLetters = groupCands.length > 1;
-  const lettersOk = !checkLetters || spellable(t, groupCands);
-  const looksRight = cands[0] === t || cands.slice(1, 5).includes(t);
-  if (looksRight && !lettersOk) return { status: 'wrong', read: letterReading(groupCands) };
   if (cands[0] === t) return { status: 'correct', read: cands[0] };
-  if (looksRight || (checkLetters && letterReading(groupCands) === t)) return { status: 'unsure', read: cands[0] };
+  if (cands.slice(1, 5).includes(t)) return { status: 'unsure', read: cands[0] };
   return { status: 'wrong', read: cands[0] };
 }
 
