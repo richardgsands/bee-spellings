@@ -4,8 +4,8 @@
 //  - recognize(): Google's free input-tools endpoint. Fallback only: its dictionary can
 //    "correct" a misspelling into the real word.
 
-export const READER_URL = 'https://bee-reader.bee-reader.workers.dev/read';
-const READER_CODE = 'bee'; // must match the Worker's APP_CODE secret
+export const API_URL = 'https://bee-reader.bee-reader.workers.dev';
+export const READER_CODE = 'bee'; // must match the Worker's APP_CODE secret
 
 const GOOGLE_URL = 'https://inputtools.google.com/request?ime=handwriting&app=mobilescript&cs=1&oe=UTF-8';
 
@@ -26,13 +26,14 @@ export class ReaderError extends Error {
   }
 }
 
-// Returns { read, unclear, model }.
-export async function readHandwriting(png, { timeoutMs = 15000 } = {}) {
+// Returns { read, unclear, model }. `target`, `device` and `save` are only used for the
+// Worker's logs (the target word is never shown to Claude); `save: false` keeps the image out.
+export async function readHandwriting(png, { target, device, save = true, timeoutMs = 15000 } = {}) {
   return withTimeout(timeoutMs, async (signal) => {
-    const res = await fetch(READER_URL, {
+    const res = await fetch(`${API_URL}/read`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'X-Bee-Code': READER_CODE },
-      body: JSON.stringify({ image: png }),
+      body: JSON.stringify({ image: png, target, device, save }),
       signal,
     });
     const data = await res.json().catch(() => ({}));

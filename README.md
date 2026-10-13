@@ -34,6 +34,16 @@ Everything is stored in the browser on that device (`localStorage`).
 - Read-aloud uses the browser's built-in speech synthesis, preferring a British English voice.
 - A small service worker (`sw.js`) fetches the latest files on every load when online, so updates appear on the next reload. Saved copies are used when offline.
 
+## Usage and accuracy dashboard
+
+The Worker keeps simple logs in a Cloudflare D1 database (`bee-logs`) and shows them at
+**https://bee-reader.bee-reader.workers.dev/admin**. Sign in with any username and the `ADMIN_KEY` password.
+
+- **Usage:** devices per day, week and month, sessions, and country/region. Each device is a random ID made on the device; no names, IPs or other personal data are stored.
+- **Accuracy:** every check is answered by Claude Haiku 5.5. It is also re-read in the background by Claude Opus 5.5 (`CROSS_CHECK_RATE` in `worker/wrangler.toml`, 1 = all), costing about $0.008 per check. The dashboard shows how often they agree, where they disagree (with the handwriting), and when a grown-up pressed "Bumble misread it".
+- **Images** of the written word are saved unless a grown-up turns off *"Help improve Bumble"* under Grown-ups.
+- **Retention:** everything older than `RETENTION_DAYS` (90) is deleted nightly.
+
 ## Handwriting reader (Cloudflare Worker)
 
 ```bash
@@ -50,6 +60,14 @@ npx wrangler secret put ANTHROPIC_API_KEY
 
 ```bash
 npx wrangler secret put APP_CODE
+```
+
+```bash
+npx wrangler secret put ADMIN_KEY
+```
+
+```bash
+npx wrangler d1 migrations apply bee-logs --remote
 ```
 
 ```bash

@@ -1,5 +1,6 @@
 import { Pad } from './pad.js';
 import { readHandwriting, recognize } from './recognize.js';
+import { deviceId, track } from './analytics.js';
 import { evaluate, evaluateRead, hint, marks } from './feedback.js';
 import * as speech from './speech.js';
 import * as store from './words.js';
@@ -132,6 +133,7 @@ function startSession(words) {
   let pool = store.shuffle(words);
   if (cfg.perGo > 0) pool = pool.slice(0, cfg.perGo);
   session = { words: pool, i: 0, results: [], points: 0 };
+  track('start', { lists: cfg.selectedListIds, words: pool.length });
   show('practise');
   if (!pad) pad = new Pad($('pad'), { fingerMode: cfg.fingerMode, onChange: updateButtons });
   $('score').textContent = '0';
@@ -271,7 +273,7 @@ function wrong(read) {
 // Read the writing with Claude (exact letters); fall back to Google if that fails.
 async function readPad(target) {
   try {
-    const r = await readHandwriting(pad.toPNGBase64());
+    const r = await readHandwriting(pad.toPNGBase64(), { target, device: deviceId(), save: cfg.shareSamples !== false });
     return evaluateRead(target, r.read, r.unclear);
   } catch (err) {
     console.warn('Claude reader failed, using Google instead', err);
@@ -338,6 +340,7 @@ function misread() {
   if (prev) session.points -= prev.score; // the word had already been scored as "not yet"
   session.finished = false;
   session.attempt = session.checkedAttempt || session.attempt;
+  track('misread', { target: current().w, read: $('bubble-read').textContent.replace('Bumble read: ', '') });
   $('bubble-read').classList.add('hidden');
   correct();
 }
@@ -360,6 +363,7 @@ function showResults() {
   const tricky = session.results.filter((r) => r.score < 2);
   $('btn-results-tricky').classList.toggle('hidden', !tricky.length);
   show('results');
+  track('finish', { words: session.words.length, points: session.points, max });
   if (pct >= 0.7) { confetti(); chime(); }
   speech.say($('results-title').textContent.replace('Bee-utiful', 'Beautiful'), $('results-sub').textContent);
 }
@@ -405,6 +409,7 @@ function renderSettings() {
   $('list-note').value = list().note || '';
   $('per-go').value = String(cfg.perGo);
   $('read-sentence').checked = cfg.readSentence;
+  $('share-samples').checked = cfg.shareSamples !== false;
   $('finger-mode').value = cfg.fingerMode;
   $('rate').value = cfg.rate;
   $('reader-status').textContent = '';
@@ -431,7 +436,7 @@ async function testReader() {
   ctx.fillText('bees', 40, 100);
   status('Testing…');
   try {
-    const r = await readHandwriting(c.toDataURL('image/png').split(',')[1]);
+    const r = await readHandwriting(c.toDataURL('image/png').split(',')[1], { target: 'bees', device: deviceId(), save: false });
     status(`Working ✓ – ${modelName(r.model)} read “${r.read}”.`);
   } catch (err) {
     const why = { rate_limited: 'too many checks – wait a minute' }[err.code];
@@ -506,6 +511,7 @@ function bindSettings() {
   $('btn-test-reader').addEventListener('click', testReader);
   $('per-go').addEventListener('change', (e) => { cfg.perGo = Number(e.target.value); persist(); });
   $('read-sentence').addEventListener('change', (e) => { cfg.readSentence = e.target.checked; persist(); });
+  $('share-samples').addEventListener('change', (e) => { cfg.shareSamples = e.target.checked; persist(); });
   $('finger-mode').addEventListener('change', (e) => { cfg.fingerMode = e.target.value; persist(); });
   $('voice').addEventListener('change', (e) => { cfg.voiceURI = e.target.value; persist(); });
   $('rate').addEventListener('change', (e) => { cfg.rate = Number(e.target.value); persist(); });
@@ -579,3 +585,4 @@ holdButton($('btn-misread'), 1500, misread);
 bindSettings();
 speech.configure(cfg);
 show('home');
+track('open');

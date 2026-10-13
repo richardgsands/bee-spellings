@@ -1,11 +1,16 @@
-# Cloudflare Worker that reads Spelling Bee handwriting with Claude.
-# Secrets (set with `npx wrangler secret put NAME`): ANTHROPIC_API_KEY, APP_CODE
+# Cloudflare Worker that reads Spelling Bee handwriting with Claude, logs checks
+# and app usage to D1, and serves a usage dashboard at /admin.
+# Secrets (set with `npx wrangler secret put NAME`): ANTHROPIC_API_KEY, APP_CODE, ADMIN_KEY
 name = "bee-reader"
 main = "src/index.ts"
 compatibility_date = "2026-10-01"
 
 [vars]
 ALLOWED_ORIGINS = "https://richardgsands.github.io,http://localhost:8765"
+# Share of checks that are re-read by Opus for comparison (0 to 1).
+CROSS_CHECK_RATE = "1"
+# Logs and images older than this are deleted nightly.
+RETENTION_DAYS = "90"
 
 [[ratelimits]]
 name = "LIMITER"
@@ -13,3 +18,12 @@ namespace_id = "1001"
   [ratelimits.simple]
   limit = 20
   period = 60
+
+[[d1_databases]]
+binding = "DB"
+database_name = "bee-logs"
+database_id = "f779d865-fc92-4ffb-b8ef-dd97a5c7a48f"
+migrations_dir = "migrations"
+
+[triggers]
+crons = ["17 3 * * *"]

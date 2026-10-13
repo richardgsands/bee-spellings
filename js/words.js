@@ -71,6 +71,7 @@ export function defaultConfig() {
     perGo: 10,
     fingerMode: 'auto',
     readSentence: true,
+    shareSamples: true, // let the reader save pictures of the written words (Grown-ups can turn off)
     voiceURI: '',
     rate: 0.85,
     lists: builtInLists(),
