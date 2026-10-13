@@ -12,7 +12,7 @@ interface Env {
   LIMITER: { limit(options: { key: string }): Promise<{ success: boolean }> };
 }
 
-const MODEL = "claude-sonnet-5-5";
+const MODEL = "claude-haiku-5-5";
 const MAX_IMAGE_BYTES = 400_000;
 
 const SYSTEM = `You transcribe a primary-school child's handwriting for a spelling test.
