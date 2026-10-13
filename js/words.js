@@ -73,7 +73,7 @@ export function defaultConfig() {
     readSentence: true,
     shareSamples: true, // let the reader save pictures of the written words (Grown-ups can turn off)
     voiceURI: '',
-    rate: 0.85,
+    rate: 0.9,
     lists: builtInLists(),
     removedBuiltIns: [],
     stats: {},
@@ -158,7 +158,7 @@ export function practiceWords(cfg) {
       const key = x.w.trim().toLowerCase();
       if (!key || seen.has(key)) continue;
       seen.add(key);
-      out.push({ w: x.w.trim(), sentence: x.sentence, listId: l.id });
+      out.push({ w: x.w.trim(), sentence: x.sentence, say: x.say, listId: l.id });
     }
   }
   return out;

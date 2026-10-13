@@ -118,7 +118,8 @@ function renderLearn() {
       b.textContent = w.w;
       b.addEventListener('click', async () => {
         b.classList.add('speaking');
-        await speech.say(w.w, cfg.readSentence && w.sentence, w.w);
+        const word = speech.spoken(w.w, w.say);
+        await speech.say(word, cfg.readSentence && w.sentence, word);
         b.classList.remove('speaking');
       });
       comb.append(b);
@@ -144,7 +145,8 @@ function current() { return session.words[session.i]; }
 
 function sayWord() {
   const w = current();
-  return speech.say(`Can you write… ${w.w}?`, cfg.readSentence && w.sentence, cfg.readSentence && w.sentence && w.w);
+  const word = speech.spoken(w.w, w.say);
+  return speech.say(`Can you write… ${word}?`, cfg.readSentence && w.sentence, cfg.readSentence && w.sentence && word);
 }
 
 function setBubble(html, { good = false } = {}) {
@@ -230,7 +232,7 @@ function correct() {
   $('btn-misread').classList.add('hidden');
   chime();
   confetti();
-  speech.say(spoken, `You spelled ${w.w} correctly!`);
+  speech.say(spoken, `You spelled ${speech.spoken(w.w, w.say)} correctly!`);
   finishWord(score);
 }
 
@@ -446,9 +448,16 @@ async function testReader() {
 
 function renderVoices() {
   const voices = speech.englishVoices();
-  $('voice').innerHTML = `<option value="">Automatic (British English)</option>` +
-    voices.map((v) => `<option value="${esc(v.voiceURI)}">${esc(v.name)} (${esc(v.lang)})</option>`).join('');
+  const label = (v) => {
+    const q = speech.quality(v);
+    return `${v.name}${q && !v.name.includes(q) ? ` (${q})` : ''} – ${v.lang}`;
+  };
+  const best = voices[0];
+  $('voice').innerHTML = `<option value="">Automatic${best ? ` (${esc(label(best))})` : ''}</option>` +
+    voices.map((v) => `<option value="${esc(v.voiceURI)}">${esc(label(v))}</option>`).join('');
   $('voice').value = cfg.voiceURI || '';
+  const natural = voices.some((v) => speech.quality(v) && /en[-_]GB/i.test(v.lang));
+  $('voice-tip').classList.toggle('hidden', natural);
 }
 
 function renderWordRows() {
@@ -459,8 +468,10 @@ function renderWordRows() {
     tr.innerHTML = `
       <td><input type="text" class="word-input" value="${esc(w.w)}" autocapitalize="off" autocorrect="off" spellcheck="false"></td>
       <td><input type="text" value="${esc(w.sentence || '')}" placeholder="—"></td>
+      <td><input type="text" class="say-input" value="${esc(w.say || '')}" placeholder="—" autocapitalize="off" autocorrect="off" spellcheck="false"></td>
       <td><button class="del" aria-label="Remove word">🗑️</button></td>`;
-    const [word, sentence] = tr.querySelectorAll('input');
+    const [word, sentence, sayAs] = tr.querySelectorAll('input');
+    sayAs.addEventListener('change', () => { w.say = sayAs.value.trim(); persist(); speech.say(speech.spoken(w.w, w.say)); });
     word.addEventListener('change', () => { w.w = word.value.trim(); persist(); });
     sentence.addEventListener('change', () => { w.sentence = sentence.value.trim(); persist(); });
     tr.querySelector('.del').addEventListener('click', () => { list().words.splice(i, 1); persist(); renderWordRows(); });
@@ -533,7 +544,7 @@ function bindSettings() {
       const lists = (data.lists || []).filter((l) => l && l.id && l.name && Array.isArray(l.words));
       if (!lists.length) throw new Error('no lists');
       for (const l of lists) {
-        l.words = l.words.filter((w) => w && w.w).map((w) => ({ w: String(w.w), sentence: String(w.sentence || '') }));
+        l.words = l.words.filter((w) => w && w.w).map((w) => ({ w: String(w.w), sentence: String(w.sentence || ''), say: String(w.say || '') }));
         const i = cfg.lists.findIndex((x) => x.id === l.id);
         if (i >= 0) cfg.lists[i] = l; else cfg.lists.push(l);
       }

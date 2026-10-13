@@ -31,7 +31,7 @@ Everything is stored in the browser on that device (`localStorage`).
 - **Handwriting reading:** a picture of just the written word is sent to a small Cloudflare Worker (`worker/`). The Worker asks Claude (Haiku 5.5, set by `MODEL` in `worker/src/index.ts`) to copy the letters exactly as written, mistakes included; it isn't told the target word. The app then compares the letters with the word. This works for printed and joined-up writing, and doesn't "auto-correct" misspellings. Each check costs about $0.0002 on the Anthropic API.
 - If the Worker can't be reached, the pen strokes go to Google's free handwriting endpoint instead. Its dictionary can turn a misspelling into the real word, so it's only a fallback.
 - After each check, the bubble shows what Bumble read. If Bumble misreads correct writing, a grown-up can press and hold **"Bumble misread it"** to count it as correct.
-- Read-aloud uses the browser's built-in speech synthesis, preferring a British English voice.
+- Read-aloud uses the browser's built-in speech synthesis. It picks the most natural British voice on the device (Apple's free Premium or Enhanced voices first, never the novelty ones). Words that voices get wrong on their own are spoken with a sound-alike spelling (e.g. "reading" as "reeding", not the town), and grown-ups can add their own in the word list's **Say it as** box.
 - A small service worker (`sw.js`) fetches the latest files on every load when online, so updates appear on the next reload. Saved copies are used when offline.
 
 ## Usage and accuracy dashboard

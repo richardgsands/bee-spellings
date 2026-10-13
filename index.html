@@ -165,7 +165,7 @@
           <textarea id="list-note" rows="2"></textarea></label>
         <p class="muted" id="word-count"></p>
         <table class="words-table">
-          <thead><tr><th>Word</th><th>Example sentence (optional, read aloud)</th><th></th></tr></thead>
+          <thead><tr><th>Word</th><th>Example sentence (optional, read aloud)</th><th>Say it as (optional)</th><th></th></tr></thead>
           <tbody id="words-body"></tbody>
         </table>
         <label class="field">Add words (separate with spaces, commas or new lines)
@@ -201,6 +201,8 @@
         <label class="field-inline">Voice <select id="voice"></select></label>
         <label class="field-inline">Speed <input type="range" id="rate" min="0.6" max="1.1" step="0.05"></label>
         <button class="btn btn-small" id="btn-test-voice">🔊 Test</button>
+        <p class="muted small-left" id="voice-tip" style="margin-top:12px">💡 For a much more natural voice, download a free British voice on the iPad: <b>Settings → Accessibility → Read &amp; Speak (or Spoken Content) → Voices → English → English (UK)</b>, choose a voice such as <b>Serena</b> or <b>Jamie</b>, and download its <b>Premium</b> (or Enhanced) version. Then reload this page; Bumble picks it automatically.</p>
+        <p class="muted small-left" style="margin-top:8px">If a word is said wrongly, type how it sounds in the word list's <b>Say it as</b> box (e.g. <i>reeding</i> for “reading”).</p>
       </section>
 
       <section class="panel">

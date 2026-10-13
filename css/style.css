@@ -470,6 +470,7 @@ h3 { font-size: 22px; color: var(--brown); margin-bottom: 12px; }
 .words-table td:last-child { width: 44px; }
 .words-table input[type="text"] { width: 100%; }
 .words-table .word-input { font-family: var(--font-word); }
+.words-table .say-input { max-width: 140px; }
 .words-table .del { background: none; border: 0; font-size: 22px; cursor: pointer; }
 .muted { color: var(--muted); }
 .small { font-size: 14px; text-align: center; }
@@ -491,7 +492,7 @@ h3 { font-size: 22px; color: var(--brown); margin-bottom: 12px; }
   .btn-check { min-width: 0; }
   .bee-coach { width: 72px; height: 68px; }
   .bubble { font-size: 18px; }
-  .words-table th:nth-child(2), .words-table td:nth-child(2) { display: none; }
+  .words-table th:nth-child(2), .words-table td:nth-child(2), .words-table th:nth-child(3), .words-table td:nth-child(3) { display: none; }
 }
 
 @media (prefers-reduced-motion: reduce) {
