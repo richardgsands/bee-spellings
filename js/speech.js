@@ -72,20 +72,22 @@ export function spoken(word, sayAs) {
 }
 
 // Speak one or more phrases in order. Resolves when finished (or cancelled).
+// The phrases go in one utterance (a full stop between each gives a pause):
+// iPad Safari can drop the later utterances of a queue.
 export function say(...phrases) {
   if (!synth) return Promise.resolve();
   synth.cancel();
+  const parts = phrases.flat().filter(Boolean).map((p) => String(p).trim());
+  if (!parts.length) return Promise.resolve();
+  const text = parts.map((p) => (/[.!?…]$/.test(p) ? p : p + '.')).join(' ');
   const voice = currentVoice();
-  const parts = phrases.flat().filter(Boolean);
   return new Promise((resolve) => {
-    if (!parts.length) return resolve();
-    parts.forEach((text, i) => {
-      const u = new SpeechSynthesisUtterance(text);
-      if (voice) { u.voice = voice; u.lang = voice.lang; } else { u.lang = 'en-GB'; }
-      u.rate = rate;
-      if (i === parts.length - 1) { u.onend = resolve; u.onerror = resolve; }
-      synth.speak(u);
-    });
+    const u = new SpeechSynthesisUtterance(text);
+    if (voice) { u.voice = voice; u.lang = voice.lang; } else { u.lang = 'en-GB'; }
+    u.rate = rate;
+    u.onend = resolve;
+    u.onerror = resolve;
+    synth.speak(u);
   });
 }
 

@@ -232,7 +232,8 @@ function correct() {
   $('btn-misread').classList.add('hidden');
   chime();
   confetti();
-  speech.say(spoken, `You spelled ${speech.spoken(w.w, w.say)} correctly!`);
+  const jarSpoken = score === 2 ? 'a whole jar of honey' : 'half a jar of honey';
+  speech.say(`${spoken} You spelled ${speech.spoken(w.w, w.say)} correctly and won ${jarSpoken}!`);
   finishWord(score);
 }
 
