@@ -1,11 +1,10 @@
 import { Pad } from './pad.js';
-import { readHandwriting, recognize, READER_URL } from './recognize.js';
+import { readHandwriting, recognize } from './recognize.js';
 import { evaluate, evaluateRead, hint, marks } from './feedback.js';
 import * as speech from './speech.js';
 import * as store from './words.js';
 
 const $ = (id) => document.getElementById(id);
-const readerConfigured = () => !READER_URL.includes('REPLACE_ME');
 const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
 
@@ -269,16 +268,13 @@ function wrong(read) {
   updateButtons();
 }
 
-// Read the writing: Claude (exact letters) when an access code is set, else Google.
+// Read the writing with Claude (exact letters); fall back to Google if that fails.
 async function readPad(target) {
-  const code = (cfg.accessCode || '').trim();
-  if (code && readerConfigured()) {
-    try {
-      const r = await readHandwriting(pad.toPNGBase64(), code);
-      return evaluateRead(target, r.read, r.unclear);
-    } catch (err) {
-      console.warn('Claude reader failed, using Google instead', err);
-    }
+  try {
+    const r = await readHandwriting(pad.toPNGBase64());
+    return evaluateRead(target, r.read, r.unclear);
+  } catch (err) {
+    console.warn('Claude reader failed, using Google instead', err);
   }
   return evaluate(target, await recognize(pad.toInk(), pad.width, pad.height));
 }
@@ -411,38 +407,28 @@ function renderSettings() {
   $('read-sentence').checked = cfg.readSentence;
   $('finger-mode').value = cfg.fingerMode;
   $('rate').value = cfg.rate;
-  $('access-code').value = cfg.accessCode || '';
-  renderReaderStatus();
+  $('reader-status').textContent = '';
   $('btn-del-list').disabled = cfg.lists.length < 2;
   renderVoices();
   renderWordRows();
 }
 
-function renderReaderStatus(message) {
-  const status = !readerConfigured()
-    ? 'The Claude reader isn’t set up yet – using Google.'
-    : (cfg.accessCode || '').trim() ? 'Using Claude.' : 'Using Google (no access code set).';
-  $('reader-status').textContent = message || status;
-}
-
 // Send a small typed sample to the Claude reader to check the code works.
 async function testReader() {
-  if (!readerConfigured()) return renderReaderStatus();
-  const code = (cfg.accessCode || '').trim();
-  if (!code) return renderReaderStatus('Enter the access code first.');
+  const status = (text) => { $('reader-status').textContent = text; };
   const c = document.createElement('canvas');
   c.width = 360; c.height = 140;
   const ctx = c.getContext('2d');
   ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, c.width, c.height);
   ctx.fillStyle = '#000'; ctx.font = '80px Andika, sans-serif';
   ctx.fillText('bees', 40, 100);
-  renderReaderStatus('Testing…');
+  status('Testing…');
   try {
-    const r = await readHandwriting(c.toDataURL('image/png').split(',')[1], code);
-    renderReaderStatus(`Working ✓ – Claude read “${r.read}”.`);
+    const r = await readHandwriting(c.toDataURL('image/png').split(',')[1]);
+    status(`Working ✓ – Claude read “${r.read}”.`);
   } catch (err) {
-    const why = { bad_code: 'the access code is wrong', rate_limited: 'too many checks – wait a minute' }[err.code];
-    renderReaderStatus(`Not working: ${why || err.message}. Bumble will use Google instead.`);
+    const why = { rate_limited: 'too many checks – wait a minute' }[err.code];
+    status(`Not working: ${why || err.message}. Bumble will use Google instead.`);
   }
 }
 
@@ -510,7 +496,6 @@ function bindSettings() {
     persist();
     renderWordRows();
   });
-  $('access-code').addEventListener('change', (e) => { cfg.accessCode = e.target.value.trim(); persist(); renderReaderStatus(); });
   $('btn-test-reader').addEventListener('click', testReader);
   $('per-go').addEventListener('change', (e) => { cfg.perGo = Number(e.target.value); persist(); });
   $('read-sentence').addEventListener('change', (e) => { cfg.readSentence = e.target.checked; persist(); });

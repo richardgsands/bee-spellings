@@ -1,10 +1,11 @@
 // Handwriting recognition.
 //  - readHandwriting(): Claude vision, via our Cloudflare Worker (see worker/). Copies the
-//    letters exactly as written, so misspellings stay misspelt. Needs the family access code.
+//    letters exactly as written, so misspellings stay misspelt.
 //  - recognize(): Google's free input-tools endpoint. Fallback only: its dictionary can
 //    "correct" a misspelling into the real word.
 
-export const READER_URL = 'https://bee-reader.REPLACE_ME.workers.dev/read';
+export const READER_URL = 'https://bee-reader.bee-reader.workers.dev/read';
+const READER_CODE = 'bee'; // must match the Worker's APP_CODE secret
 
 const GOOGLE_URL = 'https://inputtools.google.com/request?ime=handwriting&app=mobilescript&cs=1&oe=UTF-8';
 
@@ -26,11 +27,11 @@ export class ReaderError extends Error {
 }
 
 // Returns { read, unclear }.
-export async function readHandwriting(png, code, { timeoutMs = 15000 } = {}) {
+export async function readHandwriting(png, { timeoutMs = 15000 } = {}) {
   return withTimeout(timeoutMs, async (signal) => {
     const res = await fetch(READER_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-Bee-Code': code },
+      headers: { 'Content-Type': 'application/json', 'X-Bee-Code': READER_CODE },
       body: JSON.stringify({ image: png }),
       signal,
     });

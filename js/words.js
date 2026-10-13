@@ -71,7 +71,6 @@ export function defaultConfig() {
     perGo: 10,
     fingerMode: 'auto',
     readSentence: true,
-    accessCode: '', // family code for the Claude handwriting reader (see worker/)
     voiceURI: '',
     rate: 0.85,
     lists: builtInLists(),

@@ -175,12 +175,8 @@
 
       <section class="panel">
         <h3>Handwriting checking</h3>
-        <p class="muted">With the family access code, Bumble reads the writing with Claude, which copies the letters exactly as written (so spelling mistakes aren't “auto-corrected”). Without it, Google's free reader is used.</p>
-        <div class="row">
-          <label for="access-code">Access code</label>
-          <input id="access-code" type="text" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">
-          <button class="btn btn-small" id="btn-test-reader">Test</button>
-        </div>
+        <p class="muted">Bumble reads the writing with Claude, which copies the letters exactly as written, so spelling mistakes aren't “auto-corrected”. If Claude can't be reached, Google's free reader is used instead.</p>
+        <button class="btn btn-small" id="btn-test-reader">Test the reader</button>
         <p class="muted" id="reader-status"></p>
       </section>
 
@@ -215,7 +211,7 @@
           <button class="btn btn-small btn-danger" id="btn-reset">Reset everything</button>
         </div>
       </section>
-      <p class="muted small">Checking handwriting needs an internet connection. With the access code, a picture of just the written word is sent to Claude; otherwise the pen strokes are sent to Google.</p>
+      <p class="muted small">Checking handwriting needs an internet connection. A picture of just the written word is sent to Claude (or the pen strokes to Google if Claude can't be reached).</p>
     </div>
   </main>
 

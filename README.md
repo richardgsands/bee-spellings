@@ -28,8 +28,8 @@ Everything is stored in the browser on that device (`localStorage`).
 ## How it works
 
 - Plain HTML, CSS and ES modules, with no build step.
-- **Handwriting reading:** with the family access code (entered under Grown-ups), a picture of just the written word is sent to a small Cloudflare Worker (`worker/`). The Worker asks Claude to copy the letters exactly as written, mistakes included; it isn't told the target word. The app then compares the letters with the word. This works for printed and joined-up writing, and doesn't "auto-correct" misspellings. Each check costs well under a penny on the Anthropic API.
-- Without the code, or if the Worker can't be reached, the pen strokes go to Google's free handwriting endpoint instead. Its dictionary can turn a misspelling into the real word, so it's only a fallback.
+- **Handwriting reading:** a picture of just the written word is sent to a small Cloudflare Worker (`worker/`). The Worker asks Claude to copy the letters exactly as written, mistakes included; it isn't told the target word. The app then compares the letters with the word. This works for printed and joined-up writing, and doesn't "auto-correct" misspellings. Each check costs well under a penny on the Anthropic API.
+- If the Worker can't be reached, the pen strokes go to Google's free handwriting endpoint instead. Its dictionary can turn a misspelling into the real word, so it's only a fallback.
 - After each check, the bubble shows what Bumble read. If Bumble misreads correct writing, a grown-up can press and hold **"Bumble misread it"** to count it as correct.
 - Read-aloud uses the browser's built-in speech synthesis, preferring a British English voice.
 - A small service worker (`sw.js`) fetches the latest files on every load when online, so updates appear on the next reload. Saved copies are used when offline.
@@ -56,7 +56,7 @@ npx wrangler secret put APP_CODE
 npx wrangler deploy
 ```
 
-Then set `READER_URL` in `js/recognize.js` to the deployed `…workers.dev/read` address. Set a monthly spend limit on the Anthropic API key's workspace. The Worker only accepts requests from the app's own site, with the right access code, at up to 20 per minute per device.
+Then set `READER_URL` in `js/recognize.js` to the deployed `…workers.dev/read` address. Set a monthly spend limit on the Anthropic API key's workspace. `APP_CODE` must match `READER_CODE` in `js/recognize.js`. The Worker only accepts requests from the app's own site, at up to 20 per minute per device.
 
 ## Development
 
