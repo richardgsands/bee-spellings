@@ -201,7 +201,11 @@
         <label class="field-inline">Voice <select id="voice"></select></label>
         <label class="field-inline">Speed <input type="range" id="rate" min="0.6" max="1.1" step="0.05"></label>
         <button class="btn btn-small" id="btn-test-voice">🔊 Test</button>
-        <p class="muted small-left" id="voice-tip" style="margin-top:12px">💡 For a much more natural voice, download a free British voice on the iPad: <b>Settings → Accessibility → Read &amp; Speak (or Spoken Content) → Voices → English → English (UK)</b>, choose a voice such as <b>Serena</b> or <b>Jamie</b>, and download its <b>Premium</b> (or Enhanced) version. Then reload this page; Bumble picks it automatically.</p>
+        <p class="muted small-left" id="voice-tip" style="margin-top:12px">💡 For a much more natural voice, download a free British voice on the iPad: <b>Settings → Accessibility → Read &amp; Speak (or Spoken Content) → Voices → English → English (UK)</b>, choose a voice such as <b>Serena</b> or <b>Jamie</b>, and download its <b>Premium</b> (or Enhanced) version. Also make it the default: tap <b>English (UK)</b> under Voices and select it. Then fully close Safari (swipe it away in the app switcher) and reopen Spelling Bee; Bumble uses it automatically.</p>
+        <details class="voice-details">
+          <summary>Voices this browser can use</summary>
+          <ul id="voice-list"></ul>
+        </details>
         <p class="muted small-left" style="margin-top:8px">If a word is said wrongly, type how it sounds in the word list's <b>Say it as</b> box (e.g. <i>reeding</i> for “reading”).</p>
       </section>
 

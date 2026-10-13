@@ -452,12 +452,17 @@ function renderVoices() {
     const q = speech.quality(v);
     return `${v.name}${q && !v.name.includes(q) ? ` (${q})` : ''} – ${v.lang}`;
   };
-  const best = voices[0];
-  $('voice').innerHTML = `<option value="">Automatic${best ? ` (${esc(label(best))})` : ''}</option>` +
+  const natural = voices.find((v) => speech.quality(v) && /en[-_]GB/i.test(v.lang));
+  const auto = natural ? label(natural) : 'the iPad’s own English (UK) voice';
+  $('voice').innerHTML =
+    `<option value="">Automatic (${esc(auto)})</option>` +
+    `<option value="${speech.SYSTEM}">The iPad’s own English (UK) voice (from Settings)</option>` +
     voices.map((v) => `<option value="${esc(v.voiceURI)}">${esc(label(v))}</option>`).join('');
   $('voice').value = cfg.voiceURI || '';
-  const natural = voices.some((v) => speech.quality(v) && /en[-_]GB/i.test(v.lang));
-  $('voice-tip').classList.toggle('hidden', natural);
+  $('voice-tip').classList.toggle('hidden', !!natural);
+  $('voice-list').innerHTML = voices.length
+    ? voices.map((v) => `<li>${esc(label(v))}${v.localService ? '' : ' · online'}<br><code>${esc(v.voiceURI)}</code></li>`).join('')
+    : '<li>None reported yet – try again in a moment.</li>';
 }
 
 function renderWordRows() {
@@ -592,6 +597,9 @@ $('btn-quit').addEventListener('click', () => {
   show('home');
 });
 holdButton($('btn-grownups'), 1500, () => show('settings'));
+window.speechSynthesis?.addEventListener?.('voiceschanged', () => {
+  if ($('settings').classList.contains('active')) renderVoices();
+});
 holdButton($('btn-misread'), 1500, misread);
 bindSettings();
 speech.configure(cfg);

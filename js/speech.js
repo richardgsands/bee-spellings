@@ -40,9 +40,17 @@ export function englishVoices() {
   return voices.filter((v) => /^en[-_]/i.test(v.lang)).sort((a, b) => score(b) - score(a));
 }
 
+// The voice to use, or null to let the device use its own default voice for
+// British English (on an iPad, the one chosen in Settings, which Safari may not
+// list for web pages even when it's a downloaded Enhanced or Premium voice).
+export const SYSTEM = 'system';
 export function currentVoice() {
+  if (chosenURI === SYSTEM) return null;
   const en = englishVoices();
-  return (chosenURI && en.find((x) => x.voiceURI === chosenURI)) || en[0] || null;
+  const chosen = chosenURI && en.find((x) => x.voiceURI === chosenURI);
+  if (chosen) return chosen;
+  const best = en[0];
+  return best && quality(best) ? best : null;
 }
 
 export function configure({ voiceURI, rate: r }) {
