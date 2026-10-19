@@ -155,7 +155,7 @@ function setBubble(html, { good = false } = {}) {
 }
 
 function presentWord() {
-  Object.assign(session, { attempt: 1, unsure: 0, peeked: false, revealed: false, finished: false });
+  Object.assign(session, { attempt: 1, unsure: 0, unclear: 0, peeked: false, revealed: false, finished: false });
   pad.clear();
   $('reveal').classList.add('hidden');
   $('bubble-read').classList.add('hidden');
@@ -315,6 +315,17 @@ async function check() {
   session.checkedAttempt = session.attempt;
   if (res.status === 'correct') return correct();
   $('btn-misread').classList.remove('hidden');
+  // Claude couldn't make out a letter: ask once for a neater go, then treat the reading
+  // as a normal answer (an unclear reading says nothing about whether the spelling is right).
+  if (res.status === 'unclear' && ++session.unclear < 2) {
+    beeMood('think', 'wiggle');
+    pad.dim();
+    setBubble(`I couldn't quite read one of your letters. Can you write it again a bit neater? 🔍`);
+    showRead(res.read);
+    speech.say(`I couldn't quite read one of your letters. Can you write it again a bit neater?`);
+    return updateButtons();
+  }
+  // Google fallback: the word was one of its lower-ranked guesses, so it's probably right.
   if (res.status === 'unsure') {
     session.unsure++;
     if (session.unsure >= 2) return correct();

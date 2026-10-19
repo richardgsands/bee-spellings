@@ -11,14 +11,15 @@ export function norm(s) {
 
 // Claude's reading: the letters exactly as written.
 //   correct – the letters spell the word
-//   unsure  – they don't, but the reader flagged a letter it couldn't make out
+//   unclear – they don't, but the reader flagged a letter it couldn't make out
+//             (says nothing about whether the spelling is right)
 //   wrong   – they spell something else
 //   empty   – nothing readable
 export function evaluateRead(target, read, unclear = false) {
   const t = norm(target), r = norm(read);
   if (!r) return { status: 'empty', read: '' };
   if (r === t) return { status: 'correct', read: r };
-  return { status: unclear ? 'unsure' : 'wrong', read: r };
+  return { status: unclear ? 'unclear' : 'wrong', read: r };
 }
 
 // Google's ranked candidates (fallback reader). Its dictionary can "correct"

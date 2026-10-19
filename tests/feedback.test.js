@@ -105,7 +105,7 @@ test('evaluateRead: exact letters decide, unclear readings ask for a neater go',
   assert.deepEqual(evaluateRead('beginning', 'beginning'), { status: 'correct', read: 'beginning' });
   assert.equal(evaluateRead('beginning', ' Beginning. ').status, 'correct');
   assert.deepEqual(evaluateRead('walk', 'walc'), { status: 'wrong', read: 'walc' });
-  assert.equal(evaluateRead('walk', 'walc', true).status, 'unsure');
+  assert.equal(evaluateRead('walk', 'walc', true).status, 'unclear');
   assert.equal(evaluateRead('walk', '').status, 'empty');
   assert.equal(hint('walk', evaluateRead('walk', 'walc').read).rule, 'one-letter');
 });
