@@ -66,7 +66,7 @@ const builtInLists = () => [
 export function defaultConfig() {
   return {
     version: 1,
-    selectedListIds: ['y3-autumn1-week5'], // the weeks being practised
+    selectedListIds: ['y3-autumn1-week5'], // the list being practised (one at a time)
     activeListId: 'y3-autumn1-week5', // the list open for editing in Grown-ups
     perGo: 10,
     fingerMode: 'auto',
@@ -139,9 +139,9 @@ export function record(cfg, listId, word, score) {
   w.best = Math.max(w.best, score);
 }
 
-// Keep the selection pointing at lists that exist, and never empty.
+// Keep the selection pointing at one list that exists (one set of words at a time).
 export function tidySelection(cfg) {
-  cfg.selectedListIds = cfg.selectedListIds.filter((id) => cfg.lists.some((l) => l.id === id));
+  cfg.selectedListIds = cfg.selectedListIds.filter((id) => cfg.lists.some((l) => l.id === id)).slice(0, 1);
   if (!cfg.selectedListIds.length && cfg.lists.length) cfg.selectedListIds = [cfg.lists[0].id];
 }
 

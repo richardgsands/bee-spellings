@@ -10,7 +10,7 @@ Bumble the bee reads each word aloud. The child writes the word on the lined pad
   1. First mistake: a hint that doesn't give the answer away. Hints know the spelling rules: y → i before -es/-ed/-er/-est, keep the y before -ing, doubling after a short vowel or a stressed ending (and not doubling otherwise), and dropping or not repeating a final e.
   2. Second mistake: Bumble shows what it read next to the real word with the letters to fix highlighted, and the child copies it.
 - **Tricky words**: practise again the words that were missed or peeked at.
-- **Which words?**: on the home screen, tap a week to switch it on or off. Several weeks can be on at once for revision.
+- **My words**: on the home screen, choose which week's list to practise.
 
 ## Grown-ups
 
@@ -86,7 +86,7 @@ python3 -m http.server 8765
 npm test
 ```
 
-Built-in word lists. Choose one or more on the home screen; words from every chosen list are mixed together:
+Built-in word lists (choose one on the home screen):
 - **Y3 Autumn 1, Week 4:** adding -ing, -ed, -er and -est (y → i).
 - **Y3 Autumn 1, Week 5:** doubling the last letter only when the end of the word is stressed (forgetting, gardening).
 

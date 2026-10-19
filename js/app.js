@@ -79,29 +79,15 @@ function inScope() { return store.practiceWords(cfg); }
 function persist() { store.save(cfg); speech.configure(cfg); pad?.setFingerMode(cfg.fingerMode); }
 
 function renderHome() {
-  const box = $('home-lists');
-  box.innerHTML = '';
-  for (const l of cfg.lists) {
-    const n = l.words.filter((w) => w.w.trim()).length;
-    const b = document.createElement('button');
-    b.className = 'chip';
-    b.setAttribute('aria-pressed', String(cfg.selectedListIds.includes(l.id)));
-    b.innerHTML = `${esc(l.name)} <small>· ${n} word${n === 1 ? '' : 's'}</small>`;
-    b.addEventListener('click', () => toggleList(l.id));
-    box.append(b);
-  }
+  const count = (l) => l.words.filter((w) => w.w.trim()).length;
+  $('home-list').innerHTML = cfg.lists
+    .map((l) => `<option value="${esc(l.id)}">${esc(l.name)} · ${count(l)} word${count(l) === 1 ? '' : 's'}</option>`)
+    .join('');
+  $('home-list').value = cfg.selectedListIds[0];
   $('btn-start').disabled = !inScope().length;
   const tricky = store.trickyWords(cfg);
   $('btn-tricky').classList.toggle('hidden', !tricky.length);
   $('btn-tricky').textContent = `🔁 Tricky words (${tricky.length})`;
-}
-
-function toggleList(id) {
-  const on = cfg.selectedListIds.includes(id);
-  if (on && cfg.selectedListIds.length === 1) return; // always practise at least one list
-  cfg.selectedListIds = on ? cfg.selectedListIds.filter((x) => x !== id) : [...cfg.selectedListIds, id];
-  persist();
-  renderHome();
 }
 
 function renderLearn() {
@@ -586,6 +572,7 @@ function bindSettings() {
 // ---------- wiring ----------
 $('btn-start').addEventListener('click', () => startSession(inScope()));
 $('btn-learn').addEventListener('click', () => show('learn'));
+$('home-list').addEventListener('change', (e) => { cfg.selectedListIds = [e.target.value]; persist(); renderHome(); });
 $('btn-tricky').addEventListener('click', () => startSession(store.trickyWords(cfg)));
 $('btn-again').addEventListener('click', () => startSession(inScope()));
 $('btn-results-tricky').addEventListener('click', () => {
