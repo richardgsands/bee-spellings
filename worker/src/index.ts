@@ -4,8 +4,9 @@
 // target word itself, so Claude is never told what the word should be.
 //
 // Also: logs each check (and the image, if the device allows it) to D1, re-reads it
-// with a stronger model in the background for comparison, records simple usage
-// events, and serves a password-protected dashboard at /admin.
+// in the background with a cheaper model and with Google's handwriting reader for
+// comparison, records simple usage events, and serves a password-protected
+// dashboard at /admin.
 
 import Anthropic from "@anthropic-ai/sdk";
 import { renderDashboard, type DashboardData } from "./dashboard";
@@ -21,9 +22,10 @@ interface Env {
   LIMITER: { limit(options: { key: string }): Promise<{ success: boolean }> };
 }
 
-const MODEL = "claude-haiku-5-5";
-const CHECK_MODEL = "claude-opus-5-5";
+const MODEL = "claude-opus-5-5"; // answers the child
+const CHECK_MODEL = "claude-haiku-5-5"; // background comparison for the dashboard
 const MAX_IMAGE_BYTES = 400_000;
+const MAX_INK_CHARS = 300_000;
 const EVENTS = new Set(["open", "start", "finish", "misread"]);
 const DAY = 86_400_000;
 
@@ -77,6 +79,15 @@ function json(body: unknown, status: number, headers: Record<string, string>): R
 const shortText = (v: unknown, max: number): string | null =>
   typeof v === "string" && v.length > 0 && v.length <= max ? v : null;
 
+// The pen strokes and writing-area size, if the app sent sensible ones (for the Google comparison).
+function strokes(ink: unknown, area: unknown): { ink: unknown[] | null; area: { w: number; h: number } | null } {
+  const a = area as { w?: unknown; h?: unknown } | null;
+  const ok =
+    Array.isArray(ink) && ink.length > 0 && ink.length <= 200 && JSON.stringify(ink).length <= MAX_INK_CHARS &&
+    typeof a?.w === "number" && typeof a?.h === "number" && a.w > 0 && a.h > 0 && a.w < 10_000 && a.h < 10_000;
+  return ok ? { ink: ink as unknown[], area: { w: Math.round(a!.w as number), h: Math.round(a!.h as number) } } : { ink: null, area: null };
+}
+
 function base64ToBytes(b64: string): Uint8Array {
   const bin = atob(b64);
   const bytes = new Uint8Array(bin.length);
@@ -101,30 +112,40 @@ function parseReading(response: {
   return { text: parsed.text, unclear: parsed.unclear, model: response.model };
 }
 
-// The quick reader the child waits for.
-async function readFast(client: Anthropic, image: string): Promise<Reading> {
-  const response = await client.messages.create({
-    model: MODEL,
+// Models that accept Anthropic's server-side refusal fallback on this account.
+const FALLBACK_MODELS = new Set(["claude-opus-5-5"]);
+
+async function transcribe(client: Anthropic, model: string, image: string): Promise<Reading> {
+  const params = {
+    model,
     max_tokens: 2000,
     system: SYSTEM,
-    output_config: { effort: "low", format: { type: "json_schema", schema: SCHEMA } },
-    messages: [{ role: "user", content: imageContent(image) }],
-  });
+    output_config: { effort: "low" as const, format: { type: "json_schema" as const, schema: SCHEMA } },
+    messages: [{ role: "user" as const, content: imageContent(image) }],
+  };
+  const response = FALLBACK_MODELS.has(model)
+    ? await client.beta.messages.create({ ...params, betas: ["server-side-fallback-2026-07-01"], fallbacks: "default" })
+    : await client.messages.create(params);
   return parseReading(response);
 }
 
-// The stronger reader used only for comparison, in the background.
-async function readCareful(client: Anthropic, image: string): Promise<Reading> {
-  const response = await client.beta.messages.create({
-    model: CHECK_MODEL,
-    max_tokens: 2000,
-    betas: ["server-side-fallback-2026-07-01"],
-    fallbacks: "default",
-    system: SYSTEM,
-    output_config: { effort: "low", format: { type: "json_schema", schema: SCHEMA } },
-    messages: [{ role: "user", content: imageContent(image) }],
+// Google's free handwriting reader, for comparison only: it reads pen strokes, and its
+// dictionary tends to turn misspellings into real words.
+const GOOGLE_URL = "https://inputtools.google.com/request?ime=handwriting&app=mobilescript&cs=1&oe=UTF-8";
+
+async function readGoogle(ink: unknown, area: { w: number; h: number }): Promise<string> {
+  const res = await fetch(GOOGLE_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      options: "enable_pre_space",
+      requests: [{ writing_guide: { writing_area_width: area.w, writing_area_height: area.h }, ink, language: "en" }],
+    }),
   });
-  return parseReading(response);
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const data = (await res.json()) as [string, [string, string[]][]];
+  if (data[0] !== "SUCCESS") throw new Error(String(data[0]));
+  return (data[1]?.[0]?.[1]?.[0] ?? "").trim().toLowerCase();
 }
 
 // ---------- background work ----------
@@ -134,10 +155,15 @@ interface CheckEntry {
   country: string | null;
   target: string | null;
   image: string;
+  ink: unknown[] | null;
+  area: { w: number; h: number } | null;
   save: boolean;
   ms: number;
   reading: Reading;
 }
+
+const errorText = (err: unknown) =>
+  (err instanceof Anthropic.APIError ? `API ${err.status}` : String((err as Error)?.message ?? err)).slice(0, 200);
 
 async function logCheck(env: Env, client: Anthropic, entry: CheckEntry): Promise<void> {
   const { meta } = await env.DB.prepare(
@@ -150,24 +176,35 @@ async function logCheck(env: Env, client: Anthropic, entry: CheckEntry): Promise
       entry.save ? base64ToBytes(entry.image) : null,
     )
     .run();
+  const id = meta.last_row_id;
 
-  const rate = Number(env.CROSS_CHECK_RATE) || 0;
-  if (Math.random() >= rate) return;
-  try {
-    const check = await readCareful(client, entry.image);
-    await env.DB.prepare(`UPDATE checks SET check_read = ?, check_unclear = ?, check_model = ? WHERE id = ?`)
-      .bind(check.text, check.unclear ? 1 : 0, check.model, meta.last_row_id)
-      .run();
-  } catch (err) {
-    const why = err instanceof Anthropic.APIError ? `API ${err.status}` : String((err as Error)?.message ?? err);
-    await env.DB.prepare(`UPDATE checks SET check_error = ? WHERE id = ?`).bind(why.slice(0, 200), meta.last_row_id).run();
-  }
+  const crossCheck = async () => {
+    if (Math.random() >= (Number(env.CROSS_CHECK_RATE) || 0)) return;
+    try {
+      const check = await transcribe(client, CHECK_MODEL, entry.image);
+      await env.DB.prepare(`UPDATE checks SET check_read = ?, check_unclear = ?, check_model = ? WHERE id = ?`)
+        .bind(check.text, check.unclear ? 1 : 0, check.model, id)
+        .run();
+    } catch (err) {
+      await env.DB.prepare(`UPDATE checks SET check_error = ? WHERE id = ?`).bind(errorText(err), id).run();
+    }
+  };
+  const googleCheck = async () => {
+    if (!entry.ink || !entry.area) return;
+    try {
+      const read = await readGoogle(entry.ink, entry.area);
+      await env.DB.prepare(`UPDATE checks SET google_read = ? WHERE id = ?`).bind(read, id).run();
+    } catch (err) {
+      await env.DB.prepare(`UPDATE checks SET google_error = ? WHERE id = ?`).bind(errorText(err), id).run();
+    }
+  };
+  await Promise.all([crossCheck(), googleCheck()]);
 }
 
 // ---------- routes ----------
 
 async function handleRead(request: Request, env: Env, ctx: ExecutionContext, headers: Record<string, string>) {
-  let body: { image?: unknown; target?: unknown; device?: unknown; save?: unknown };
+  let body: { image?: unknown; target?: unknown; device?: unknown; save?: unknown; ink?: unknown; area?: unknown };
   try {
     body = await request.json();
   } catch {
@@ -182,7 +219,7 @@ async function handleRead(request: Request, env: Env, ctx: ExecutionContext, hea
   const started = Date.now();
   let reading: Reading;
   try {
-    reading = await readFast(client, image);
+    reading = await transcribe(client, MODEL, image);
   } catch (err) {
     if (err instanceof Anthropic.RateLimitError) return json({ error: "busy" }, 503, headers);
     if (err instanceof Anthropic.APIError) {
@@ -199,6 +236,7 @@ async function handleRead(request: Request, env: Env, ctx: ExecutionContext, hea
       country: (request.cf?.country as string | undefined) ?? null,
       target: shortText(body.target, 40),
       image,
+      ...strokes(body.ink, body.area),
       save: body.save !== false,
       ms: Date.now() - started,
       reading,
@@ -282,7 +320,7 @@ async function handleAdmin(request: Request, env: Env, url: URL): Promise<Respon
     ).bind(since(30)).all<DashboardData["places"][number]>(),
     env.DB.prepare(
       `SELECT id, ts, device, target, read, unclear, model, ms, check_read, check_unclear, check_model, check_error,
-              image IS NOT NULL AS has_image
+              google_read, google_error, image IS NOT NULL AS has_image
        FROM checks WHERE ts > ? ORDER BY ts DESC LIMIT 1000`,
     ).bind(since(30)).all<DashboardData["checks"][number]>(),
   ]);

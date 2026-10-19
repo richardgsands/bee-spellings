@@ -21,14 +21,15 @@ export class ReaderError extends Error {
   }
 }
 
-// Returns { read, unclear, model }. `target`, `device` and `save` are only used for the
-// Worker's logs (the target word is never shown to Claude); `save: false` keeps the image out.
-export async function readHandwriting(png, { target, device, save = true, timeoutMs = 15000 } = {}) {
+// Returns { read, unclear, model }. The other fields are only for the Worker's logs and
+// dashboard: `target` (never shown to Claude), `device`, `save: false` to keep the image out,
+// and the pen strokes (`ink`, `area`) for a background comparison with Google's reader.
+export async function readHandwriting(png, { target, device, save = true, ink, area, timeoutMs = 20000 } = {}) {
   return withTimeout(timeoutMs, async (signal) => {
     const res = await fetch(`${API_URL}/read`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'X-Bee-Code': READER_CODE },
-      body: JSON.stringify({ image: png, target, device, save }),
+      body: JSON.stringify({ image: png, target, device, save, ink, area }),
       signal,
     });
     const data = await res.json().catch(() => ({}));

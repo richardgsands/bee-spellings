@@ -276,7 +276,13 @@ function wrong(read) {
 
 // Read the writing with Claude (exact letters).
 async function readPad(target) {
-  const r = await readHandwriting(pad.toPNGBase64(), { target, device: deviceId(), save: cfg.shareSamples !== false });
+  const r = await readHandwriting(pad.toPNGBase64(), {
+    target,
+    device: deviceId(),
+    save: cfg.shareSamples !== false,
+    ink: pad.toInk(),
+    area: { w: pad.width, h: pad.height },
+  });
   return evaluateRead(target, r.read, r.unclear);
 }
 

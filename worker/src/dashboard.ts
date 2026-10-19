@@ -19,6 +19,8 @@ export interface DashboardData {
     check_unclear: number | null;
     check_model: string | null;
     check_error: string | null;
+    google_read: string | null;
+    google_error: string | null;
     has_image: number;
   }[];
   crossCheckRate: number;
@@ -40,29 +42,53 @@ const modelName = (id: string) => {
   return m ? `${m[1][0].toUpperCase()}${m[1].slice(1)} ${m[2]}${m[3] ? "." + m[3] : ""}` : id;
 };
 
-export function renderDashboard(d: DashboardData): string {
-  const main = modelName(d.mainModel);
-  const other = modelName(d.checkModel);
+type Check = DashboardData["checks"][number];
 
-  // Accuracy: compare the main reader with the cross-check reader.
-  const compared = d.checks.filter((c) => c.check_read !== null);
-  const sameText = compared.filter((c) => norm(c.read) === norm(c.check_read));
-  const withTarget = compared.filter((c) => c.target);
+// One check's readings by reader. Older rows had Haiku answering and Opus checking,
+// newer ones the other way round, so look readers up by model name.
+function readingOf(c: Check, reader: string): string | null {
+  if (reader === "google") return c.google_read;
+  if (c.model?.includes(reader)) return c.read;
+  if (c.check_model?.includes(reader)) return c.check_read;
+  return null;
+}
+
+const REFERENCE = "opus";
+const COMPARED = [
+  { key: "haiku", name: "Claude Haiku" },
+  { key: "google", name: "Google" },
+];
+
+export function renderDashboard(d: DashboardData): string {
   const verdict = (read: string | null, target: string | null) => norm(read) === norm(target);
-  const falsePass = withTarget.filter((c) => verdict(c.read, c.target) && !verdict(c.check_read, c.target));
-  const falseFail = withTarget.filter((c) => !verdict(c.read, c.target) && verdict(c.check_read, c.target));
-  const sameVerdict = withTarget.length - falsePass.length - falseFail.length;
-  const errors = d.checks.filter((c) => c.check_error).length;
-  const times = d.checks.map((c) => c.ms ?? 0).filter(Boolean).sort((a, b) => a - b);
+
+  // Accuracy of each reader against Opus.
+  const stats = COMPARED.map((r) => {
+    const both = d.checks.filter((c) => readingOf(c, REFERENCE) !== null && readingOf(c, r.key) !== null);
+    const withTarget = both.filter((c) => c.target);
+    const falsePass = withTarget.filter((c) => verdict(readingOf(c, r.key), c.target) && !verdict(readingOf(c, REFERENCE), c.target));
+    const falseFail = withTarget.filter((c) => !verdict(readingOf(c, r.key), c.target) && verdict(readingOf(c, REFERENCE), c.target));
+    return {
+      ...r,
+      compared: both.length,
+      sameText: both.filter((c) => norm(readingOf(c, r.key)) === norm(readingOf(c, REFERENCE))).length,
+      withTarget: withTarget.length,
+      falsePass: falsePass.length,
+      falseFail: falseFail.length,
+    };
+  });
+  const errors = d.checks.filter((c) => c.check_error || c.google_error).length;
+  const times = d.checks.filter((c) => c.model?.includes(REFERENCE)).map((c) => c.ms ?? 0).filter(Boolean).sort((a, b) => a - b);
   const median = times.length ? times[Math.floor(times.length / 2)] : 0;
 
-  // Words that children find hardest (by the main reader's verdict).
+  // Words that children find hardest (by the reference reader's verdict).
   const byWord = new Map<string, { tries: number; right: number }>();
   for (const c of d.checks) {
+    const ref = readingOf(c, REFERENCE) ?? c.read;
     if (!c.target) continue;
     const w = byWord.get(c.target) ?? { tries: 0, right: 0 };
     w.tries++;
-    if (verdict(c.read, c.target)) w.right++;
+    if (verdict(ref, c.target)) w.right++;
     byWord.set(c.target, w);
   }
   const hardest = [...byWord.entries()]
@@ -75,28 +101,33 @@ export function renderDashboard(d: DashboardData): string {
   const days = [...new Set([...d.daily.map((r) => r.day), ...checksByDay.keys()])].sort().reverse();
   const usageByDay = new Map(d.daily.map((r) => [r.day, r]));
 
-  const img = (c: DashboardData["checks"][number]) =>
+  const img = (c: Check) =>
     c.has_image ? `<img src="/admin/image?id=${c.id}" alt="handwriting" loading="lazy">` : `<span class="muted">not saved</span>`;
-  const verdictBadge = (c: DashboardData["checks"][number]) => {
-    if (!c.target || c.check_read === null) return "";
-    if (falsePass.includes(c)) return `<span class="badge bad">${esc(main)} passed a misspelling</span>`;
-    if (falseFail.includes(c)) return `<span class="badge warn">${esc(main)} failed correct writing</span>`;
-    return `<span class="badge ok">same verdict</span>`;
+  const cell = (c: Check, reader: string) => {
+    const read = readingOf(c, reader);
+    const error = reader === "google" ? c.google_error : c.model?.includes(reader) ? null : c.check_error;
+    if (read === null) return error ? `<span class="muted">error: ${esc(error)}</span>` : `<span class="muted">–</span>`;
+    const ok = c.target ? verdict(read, c.target) : null;
+    const shown = c.model?.includes(reader) ? ' <span class="muted" title="What the child saw">★</span>' : "";
+    return `<span class="${ok === null ? "" : ok ? "right" : "wrongword"}">${esc(read) || "<i>nothing</i>"}</span>${shown}`;
   };
-  const disagreements = compared.filter((c) => norm(c.read) !== norm(c.check_read)).slice(0, 60);
-  const checkRow = (c: DashboardData["checks"][number]) => `
+  const disagree = (c: Check) => {
+    const ref = readingOf(c, REFERENCE);
+    return ref !== null && COMPARED.some((r) => readingOf(c, r.key) !== null && norm(readingOf(c, r.key)) !== norm(ref));
+  };
+  const checkRow = (c: Check) => `
     <tr>
       <td class="nowrap">${esc(when(c.ts))}</td>
       <td class="word">${esc(c.target ?? "")}</td>
       <td>${img(c)}</td>
-      <td class="word">${esc(c.read ?? "")}${c.unclear ? ' <span class="muted">(unclear)</span>' : ""}</td>
-      <td class="word">${c.check_error ? `<span class="muted">error: ${esc(c.check_error)}</span>` : esc(c.check_read ?? "–")}</td>
-      <td>${verdictBadge(c)}</td>
+      <td class="word">${cell(c, REFERENCE)}</td>
+      ${COMPARED.map((r) => `<td class="word">${cell(c, r.key)}</td>`).join("")}
     </tr>`;
-  const checkTable = (rows: DashboardData["checks"], empty: string) =>
+  const checkTable = (rows: Check[], empty: string) =>
     rows.length
-      ? `<div class="scroll"><table><thead><tr><th>When</th><th>Word</th><th>Writing</th><th>${esc(main)} read</th><th>${esc(other)} read</th><th></th></tr></thead><tbody>${rows.map(checkRow).join("")}</tbody></table></div>`
+      ? `<div class="scroll"><table><thead><tr><th>When</th><th>Word</th><th>Writing</th><th>Claude Opus</th>${COMPARED.map((r) => `<th>${esc(r.name)}</th>`).join("")}</tr></thead><tbody>${rows.map(checkRow).join("")}</tbody></table></div>`
       : `<p class="muted">${empty}</p>`;
+  const disagreements = d.checks.filter(disagree).slice(0, 60);
 
   return `<!doctype html>
 <html lang="en-GB">
@@ -130,10 +161,8 @@ export function renderDashboard(d: DashboardData): string {
   .nowrap { white-space: nowrap; }
   .word { font-size: 17px; letter-spacing: 0.3px; }
   img { height: 44px; max-width: 220px; background: #fff; border: 1px solid var(--line); border-radius: 6px; display: block; }
-  .badge { display: inline-block; font-size: 12px; padding: 2px 8px; border-radius: 99px; white-space: nowrap; }
-  .ok { color: var(--ok); background: var(--ok-bg); }
-  .warn { color: var(--warn); background: var(--warn-bg); }
-  .bad { color: var(--bad); background: var(--bad-bg); }
+  .right { color: var(--ok); }
+  .wrongword { color: var(--bad); }
   .grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px; }
 </style>
 </head>
@@ -174,16 +203,13 @@ export function renderDashboard(d: DashboardData): string {
     </div>
   </div>
 
-  <h2>Reader accuracy: ${esc(main)} vs ${esc(other)}</h2>
-  <p class="muted">Every check is read by ${esc(main)} (what the child sees). ${Math.round(d.crossCheckRate * 100)}% are also re-read by ${esc(other)} in the background for comparison.</p>
-  <div class="tiles">
-    <div class="tile"><b>${compared.length}</b><span>checks compared</span></div>
-    <div class="tile"><b>${pct(sameText.length, compared.length)}</b><span>read exactly the same</span></div>
-    <div class="tile"><b>${pct(sameVerdict, withTarget.length)}</b><span>same right/wrong verdict</span></div>
-    <div class="tile"><b>${falsePass.length}</b><span>${esc(main)} passed a misspelling ${esc(other)} spotted</span></div>
-    <div class="tile"><b>${falseFail.length}</b><span>${esc(main)} failed writing ${esc(other)} read as correct</span></div>
-    <div class="tile"><b>${(median / 1000).toFixed(1)} s</b><span>median ${esc(main)} time${errors ? ` · ${errors} cross-check errors` : ""}</span></div>
-  </div>
+  <h2>Reader accuracy, compared with Claude Opus</h2>
+  <p class="muted">The child sees ${esc(modelName(d.mainModel))}'s reading. ${Math.round(d.crossCheckRate * 100)}% of checks are also read by ${esc(modelName(d.checkModel))}, and every check by Google's handwriting reader, in the background. Opus is treated as the reference.</p>
+  <div class="scroll"><table>
+    <thead><tr><th>Reader</th><th class="num">Compared</th><th class="num">Same reading as Opus</th><th class="num">Same right/wrong verdict</th><th class="num">Passed a misspelling Opus spotted</th><th class="num">Failed writing Opus read as correct</th></tr></thead>
+    <tbody>${stats.map((r) => `<tr><td>${esc(r.name)}</td><td class="num">${r.compared}</td><td class="num">${pct(r.sameText, r.compared)}</td><td class="num">${pct(r.withTarget - r.falsePass - r.falseFail, r.withTarget)}</td><td class="num">${r.falsePass}</td><td class="num">${r.falseFail}</td></tr>`).join("")}</tbody>
+  </table></div>
+  <p class="muted">Median Opus time: ${(median / 1000).toFixed(1)} s${errors ? ` · ${errors} background check errors` : ""}. ★ marks the reading the child saw. Green = spelt like the word, red = not.</p>
 
   <h2>Where the readers disagree</h2>
   ${checkTable(disagreements, "No disagreements yet.")}

@@ -28,7 +28,7 @@ Everything is stored in the browser on that device (`localStorage`).
 ## How it works
 
 - Plain HTML, CSS and ES modules, with no build step.
-- **Handwriting reading:** a picture of just the written word is sent to a small Cloudflare Worker (`worker/`). The Worker asks Claude (Haiku 5.5, set by `MODEL` in `worker/src/index.ts`) to copy the letters exactly as written, mistakes included; it isn't told the target word. The app then compares the letters with the word. This works for printed and joined-up writing, and doesn't "auto-correct" misspellings. Each check costs about $0.0002 on the Anthropic API.
+- **Handwriting reading:** a picture of just the written word is sent to a small Cloudflare Worker (`worker/`). The Worker asks Claude (Opus 5.5, set by `MODEL` in `worker/src/index.ts`) to copy the letters exactly as written, mistakes included; it isn't told the target word. The app then compares the letters with the word. This works for printed and joined-up writing, and doesn't "auto-correct" misspellings. Each check costs about $0.008 on the Anthropic API.
 - If the Worker or Claude can't be reached, Bumble says it's taking a break and the child can press Check again later. (Google's handwriting reader is no longer used by the app: its dictionary turns misspellings into real words.)
 - After each check, the bubble shows what Bumble read. If Bumble misreads correct writing, a grown-up can press and hold **"Bumble misread it"** to count it as correct.
 - Read-aloud uses the browser's built-in speech synthesis. It picks the most natural British voice on the device (Apple's free Premium or Enhanced voices first, never the novelty ones). Words that voices get wrong on their own are spoken with a sound-alike spelling (e.g. "reading" as "reeding", not the town), and grown-ups can add their own in the word list's **Say it as** box.
@@ -40,7 +40,7 @@ The Worker keeps simple logs in a Cloudflare D1 database (`bee-logs`) and shows 
 **https://bee-reader.bee-reader.workers.dev/admin**. Sign in with any username and the `ADMIN_KEY` password.
 
 - **Usage:** devices per day, week and month, sessions, and country/region. Each device is a random ID made on the device; no names, IPs or other personal data are stored.
-- **Accuracy:** every check is answered by Claude Haiku 5.5. It is also re-read in the background by Claude Opus 5.5 (`CROSS_CHECK_RATE` in `worker/wrangler.toml`, 1 = all), costing about $0.008 per check. The dashboard shows how often they agree, where they disagree (with the handwriting), and when a grown-up pressed "Bumble misread it".
+- **Accuracy:** every check is answered by Claude Opus 5.5. In the background it is also read by Claude Haiku 5.5 (`CROSS_CHECK_RATE` in `worker/wrangler.toml`, 1 = all; about $0.0002 each) and, from the pen strokes, by Google's free handwriting reader. The dashboard compares both with Opus: how often they agree, which misspellings they'd wrongly pass or correct writing they'd fail, and each disagreement with its handwriting.
 - **Images** of the written word are saved unless a grown-up turns off *"Help improve Bumble"* under Grown-ups.
 - **Retention:** everything older than `RETENTION_DAYS` (90) is deleted nightly.
 
