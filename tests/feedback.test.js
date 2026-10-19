@@ -1,19 +1,10 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { norm, evaluate, evaluateRead, align, marks, hint } from '../js/feedback.js';
+import { norm, evaluateRead, align, marks, hint } from '../js/feedback.js';
 
 test('norm lowercases, strips spaces and stray punctuation', () => {
   assert.equal(norm('  Happ ier. '), 'happier');
   assert.equal(norm('Walked!'), 'walked');
-});
-
-test('evaluate: correct, unsure, wrong, empty', () => {
-  assert.equal(evaluate('happier', ['Happier', 'happies']).status, 'correct');
-  assert.equal(evaluate('happier', ['hoppier', 'happier']).status, 'unsure');
-  assert.equal(evaluate('happier', ['happyer', 'happier']).status, 'unsure');
-  assert.equal(evaluate('happier', ['happyer', 'hippyer']).status, 'wrong');
-  assert.equal(evaluate('happier', ['a', 'b', 'c', 'd', 'e', 'happier']).status, 'wrong');
-  assert.equal(evaluate('happier', []).status, 'empty');
 });
 
 test('align finds swaps, missing and extra letters', () => {

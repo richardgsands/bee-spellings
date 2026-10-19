@@ -1,7 +1,7 @@
 import { Pad } from './pad.js';
-import { readHandwriting, recognize } from './recognize.js';
+import { readHandwriting } from './recognize.js';
 import { deviceId, track } from './analytics.js';
-import { evaluate, evaluateRead, hint, marks } from './feedback.js';
+import { evaluateRead, hint, marks } from './feedback.js';
 import * as speech from './speech.js';
 import * as store from './words.js';
 
@@ -155,7 +155,7 @@ function setBubble(html, { good = false } = {}) {
 }
 
 function presentWord() {
-  Object.assign(session, { attempt: 1, unsure: 0, unclear: 0, peeked: false, revealed: false, finished: false });
+  Object.assign(session, { attempt: 1, unclear: 0, peeked: false, revealed: false, finished: false });
   pad.clear();
   $('reveal').classList.add('hidden');
   $('bubble-read').classList.add('hidden');
@@ -273,15 +273,10 @@ function wrong(read) {
   updateButtons();
 }
 
-// Read the writing with Claude (exact letters); fall back to Google if that fails.
+// Read the writing with Claude (exact letters).
 async function readPad(target) {
-  try {
-    const r = await readHandwriting(pad.toPNGBase64(), { target, device: deviceId(), save: cfg.shareSamples !== false });
-    return evaluateRead(target, r.read, r.unclear);
-  } catch (err) {
-    console.warn('Claude reader failed, using Google instead', err);
-  }
-  return evaluate(target, await recognize(pad.toInk(), pad.width, pad.height));
+  const r = await readHandwriting(pad.toPNGBase64(), { target, device: deviceId(), save: cfg.shareSamples !== false });
+  return evaluateRead(target, r.read, r.unclear);
 }
 
 function showRead(read) {
@@ -304,9 +299,15 @@ async function check() {
   try {
     res = await readPad(w.w);
   } catch (err) {
-    console.warn('recognise failed', err);
-    beeMood('oops', 'wiggle');
-    setBubble(`Oh no! Bumble can't reach the internet to read your writing. Check the Wi-Fi, then press <b>Check</b> again.`);
+    console.warn('Reader unavailable', err);
+    beeMood('think', 'wiggle');
+    if (err.code === 'rate_limited' || err.code === 'busy') {
+      setBubble(`Phew, lots of checking! Bumble needs a quick breather. Wait a minute, then press <b>Check</b> again. 🐝`);
+      speech.say(`Phew, lots of checking! Bumble needs a quick breather. Wait a minute, then press check again.`);
+    } else {
+      setBubble(`Bumble is taking a little break right now 💤 Your writing is safe – press <b>Check</b> again in a few minutes. (If it keeps happening, check the Wi-Fi.)`);
+      speech.say(`Bumble is taking a little break right now. Press check again in a few minutes.`);
+    }
     updateButtons();
     return;
   } finally {
@@ -323,17 +324,6 @@ async function check() {
     setBubble(`I couldn't quite read one of your letters. Can you write it again a bit neater? 🔍`);
     showRead(res.read);
     speech.say(`I couldn't quite read one of your letters. Can you write it again a bit neater?`);
-    return updateButtons();
-  }
-  // Google fallback: the word was one of its lower-ranked guesses, so it's probably right.
-  if (res.status === 'unsure') {
-    session.unsure++;
-    if (session.unsure >= 2) return correct();
-    beeMood('think', 'wiggle');
-    pad.dim();
-    setBubble(`I <i>think</i> that's right, but my bee-eyes couldn't quite read it. Can you write it again a bit neater? 🔍`);
-    showRead(res.read);
-    speech.say(`I think that's right, but my bee eyes couldn't quite read it. Can you write it again a bit neater?`);
     return updateButtons();
   }
   if (res.status === 'empty') {
@@ -454,7 +444,7 @@ async function testReader() {
     status(`Working ✓ – ${modelName(r.model)} read “${r.read}”.`);
   } catch (err) {
     const why = { rate_limited: 'too many checks – wait a minute' }[err.code];
-    status(`Not working: ${why || err.message}. Bumble will use Google instead.`);
+    status(`Not working: ${why || err.message}. Bumble can't check writing until it's working again.`);
   }
 }
 

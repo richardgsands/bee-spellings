@@ -22,18 +22,6 @@ export function evaluateRead(target, read, unclear = false) {
   return { status: unclear ? 'unclear' : 'wrong', read: r };
 }
 
-// Google's ranked candidates (fallback reader). Its dictionary can "correct"
-// misspellings, so this is less strict than evaluateRead.
-//   unsure – the word is only a lower-ranked candidate (writing was hard to read)
-export function evaluate(target, candidates) {
-  const t = norm(target);
-  const cands = (candidates || []).map(norm).filter(Boolean);
-  if (!cands.length) return { status: 'empty', read: '' };
-  if (cands[0] === t) return { status: 'correct', read: cands[0] };
-  if (cands.slice(1, 5).includes(t)) return { status: 'unsure', read: cands[0] };
-  return { status: 'wrong', read: cands[0] };
-}
-
 // Optimal-string-alignment edit script from target `a` to what was read `b`.
 // Ops: same | sub | del (letter missing from b) | ins (extra letter in b) | swap
 export function align(a, b) {
