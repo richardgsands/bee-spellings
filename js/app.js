@@ -229,6 +229,7 @@ function correct() {
   const jar = score === 2 ? 'a whole jar of honey 🍯' : 'half a jar of honey 🍯';
   setBubble(`${html} You spelled <b>${esc(w.w)}</b> correctly and won ${jar}!`, { good: true });
   $('reveal').classList.add('hidden');
+  $('bubble-read').classList.add('hidden');
   $('btn-misread').classList.add('hidden');
   chime();
   confetti();
@@ -293,6 +294,7 @@ async function check() {
   }
   const w = current();
   updateButtons(true);
+  $('bubble-read').classList.add('hidden'); // the last reading is out of date now
   $('checking').classList.remove('hidden');
   beeMood('think');
   let res;
@@ -345,7 +347,6 @@ function misread() {
   session.finished = false;
   session.attempt = session.checkedAttempt || session.attempt;
   track('misread', { target: current().w, read: $('bubble-read').textContent.replace('Bumble read: ', '') });
-  $('bubble-read').classList.add('hidden');
   correct();
 }
 
