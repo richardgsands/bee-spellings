@@ -152,6 +152,7 @@ async function readGoogle(ink: unknown, area: { w: number; h: number }): Promise
 
 interface CheckEntry {
   device: string | null;
+  ip: string | null;
   country: string | null;
   target: string | null;
   image: string;
@@ -167,11 +168,11 @@ const errorText = (err: unknown) =>
 
 async function logCheck(env: Env, client: Anthropic, entry: CheckEntry): Promise<void> {
   const { meta } = await env.DB.prepare(
-    `INSERT INTO checks (ts, device, country, target, read, unclear, model, ms, image)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO checks (ts, device, ip, country, target, read, unclear, model, ms, image)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
   )
     .bind(
-      Date.now(), entry.device, entry.country, entry.target,
+      Date.now(), entry.device, entry.ip, entry.country, entry.target,
       entry.reading.text, entry.reading.unclear ? 1 : 0, entry.reading.model, entry.ms,
       entry.save ? base64ToBytes(entry.image) : null,
     )
@@ -233,6 +234,7 @@ async function handleRead(request: Request, env: Env, ctx: ExecutionContext, hea
   ctx.waitUntil(
     logCheck(env, client, {
       device: shortText(body.device, 64),
+      ip: request.headers.get("CF-Connecting-IP"),
       country: (request.cf?.country as string | undefined) ?? null,
       target: shortText(body.target, 40),
       image,
@@ -256,9 +258,9 @@ async function handleEvent(request: Request, env: Env, headers: Record<string, s
   const event = typeof body.event === "string" && EVENTS.has(body.event) ? body.event : null;
   if (!device || !event) return json({ error: "bad_request" }, 400, headers);
   const detail = body.detail === undefined ? null : JSON.stringify(body.detail).slice(0, 500);
-  await env.DB.prepare(`INSERT INTO events (ts, device, event, country, region, detail) VALUES (?, ?, ?, ?, ?, ?)`)
+  await env.DB.prepare(`INSERT INTO events (ts, device, ip, event, country, region, detail) VALUES (?, ?, ?, ?, ?, ?, ?)`)
     .bind(
-      Date.now(), device, event,
+      Date.now(), device, request.headers.get("CF-Connecting-IP"), event,
       (request.cf?.country as string | undefined) ?? null,
       (request.cf?.region as string | undefined) ?? null,
       detail,
@@ -298,7 +300,7 @@ async function handleAdmin(request: Request, env: Env, url: URL): Promise<Respon
 
   const now = Date.now();
   const since = (days: number) => now - days * DAY;
-  const [devices, daily, dailyChecks, places, checks] = await Promise.all([
+  const [devices, daily, dailyChecks, places, checks, byDevice] = await Promise.all([
     env.DB.prepare(
       `SELECT
          COUNT(DISTINCT CASE WHEN ts > ?1 THEN device END) AS d1,
@@ -323,6 +325,10 @@ async function handleAdmin(request: Request, env: Env, url: URL): Promise<Respon
               google_read, google_error, image IS NOT NULL AS has_image
        FROM checks WHERE ts > ? ORDER BY ts DESC LIMIT 1000`,
     ).bind(since(30)).all<DashboardData["checks"][number]>(),
+    env.DB.prepare(
+      `SELECT device, ip, MAX(country) AS country, COUNT(*) AS checks, MIN(ts) AS first, MAX(ts) AS last
+       FROM checks WHERE ts > ? GROUP BY device, ip ORDER BY checks DESC LIMIT 100`,
+    ).bind(since(30)).all<DashboardData["byDevice"][number]>(),
   ]);
 
   const data: DashboardData = {
@@ -332,6 +338,7 @@ async function handleAdmin(request: Request, env: Env, url: URL): Promise<Respon
     dailyChecks: dailyChecks.results,
     places: places.results,
     checks: checks.results,
+    byDevice: byDevice.results,
     crossCheckRate: Number(env.CROSS_CHECK_RATE) || 0,
     retentionDays: Number(env.RETENTION_DAYS) || 90,
     mainModel: MODEL,

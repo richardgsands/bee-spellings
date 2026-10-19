@@ -39,7 +39,7 @@ Everything is stored in the browser on that device (`localStorage`).
 The Worker keeps simple logs in a Cloudflare D1 database (`bee-logs`) and shows them at
 **https://bee-reader.bee-reader.workers.dev/admin**. Sign in with any username and the `ADMIN_KEY` password.
 
-- **Usage:** devices per day, week and month, sessions, and country/region. Each device is a random ID made on the device; no names, IPs or other personal data are stored.
+- **Usage:** devices per day, week and month, sessions, country/region, and words checked per device and IP address. Each device is a random ID made on the device. The device's IP address is stored with its checks and events; no names are stored.
 - **Accuracy:** every check is answered by Claude Opus 5.5. In the background it is also read by Claude Haiku 5.5 (`CROSS_CHECK_RATE` in `worker/wrangler.toml`, 1 = all; about $0.0002 each) and, from the pen strokes, by Google's free handwriting reader. The dashboard compares both with Opus: how often they agree, which misspellings they'd wrongly pass or correct writing they'd fail, and each disagreement with its handwriting.
 - **Images** of the written word are saved unless a grown-up turns off *"Help improve Bumble"* under Grown-ups.
 - **Retention:** everything older than `RETENTION_DAYS` (90) is deleted nightly.

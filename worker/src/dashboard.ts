@@ -23,6 +23,7 @@ export interface DashboardData {
     google_error: string | null;
     has_image: number;
   }[];
+  byDevice: { device: string | null; ip: string | null; country: string | null; checks: number; first: number; last: number }[];
   crossCheckRate: number;
   retentionDays: number;
   mainModel: string;
@@ -169,7 +170,7 @@ export function renderDashboard(d: DashboardData): string {
 <body>
 <main>
   <h1>🐝 Spelling Bee dashboard</h1>
-  <p class="muted">Updated ${esc(when(d.generated))} (UK time). Data is kept for ${d.retentionDays} days. Devices are random IDs made on each device, with no names.</p>
+  <p class="muted">Updated ${esc(when(d.generated))} (UK time). Data is kept for ${d.retentionDays} days. Devices are random IDs made on each device, with no names; IP addresses are the device's network address at the time.</p>
 
   <h2>Usage</h2>
   <div class="tiles">
@@ -202,6 +203,16 @@ export function renderDashboard(d: DashboardData): string {
       }</tbody></table>
     </div>
   </div>
+
+  <h2>Words checked by device and IP address (30 days)</h2>
+  <div class="scroll"><table>
+    <thead><tr><th>Device</th><th>IP address</th><th>Place</th><th class="num">Words checked</th><th>First</th><th>Last</th></tr></thead>
+    <tbody>${
+      d.byDevice.length
+        ? d.byDevice.map((r) => `<tr><td><code title="${esc(r.device ?? "")}">${r.device ? esc(r.device.slice(0, 8)) : '<span class="muted">unknown</span>'}</code></td><td><code>${r.ip ? esc(r.ip) : '<span class="muted">not recorded</span>'}</code></td><td>${flag(r.country)} ${esc(r.country ?? "")}</td><td class="num">${r.checks}</td><td class="nowrap">${esc(when(r.first))}</td><td class="nowrap">${esc(when(r.last))}</td></tr>`).join("")
+        : `<tr><td colspan="6" class="muted">No checks yet.</td></tr>`
+    }</tbody>
+  </table></div>
 
   <h2>Reader accuracy, compared with Claude Opus</h2>
   <p class="muted">The child sees ${esc(modelName(d.mainModel))}'s reading. ${Math.round(d.crossCheckRate * 100)}% of checks are also read by ${esc(modelName(d.checkModel))}, and every check by Google's handwriting reader, in the background. Opus is treated as the reference.</p>
