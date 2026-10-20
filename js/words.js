@@ -48,6 +48,28 @@ const y3Week5 = [
   ['forget', 'Do not forget your coat.'],
 ];
 
+const y3Week6 = [
+  ['crystal', 'The crystal sparkled in the sunlight.'],
+  ['gym', 'We have PE in the school gym.'],
+  ['hymn', 'We sang a hymn in assembly.'],
+  ['mystery', 'The detective solved the mystery.'],
+  ['myth', 'The story about the dragon is an old myth.'],
+  ['pyramid', 'The Egyptians built a huge pyramid.'],
+  ['symbol', 'A heart is a symbol of love.'],
+  ['syrup', 'I poured syrup on my pancakes.'],
+  ['typical', 'It was a typical rainy Monday.'],
+  ['Egypt', 'The pyramids are in Egypt.'],
+  ['bicycle', 'I rode my bicycle to the park.'],
+  ['cymbals', 'He crashed the cymbals in the band.'],
+  ['cylinder', 'A tin of beans is shaped like a cylinder.'],
+  ['gymnast', 'The gymnast did a cartwheel.'],
+  ['gymnastics', 'She goes to gymnastics on Saturdays.'],
+  ['oxygen', 'We need oxygen to breathe.'],
+  ['crypt', 'The old church has a crypt under the floor.'],
+  ['lyrics', 'I know all the lyrics to that song.'],
+  ['lynx', 'A lynx is a wild cat with tufty ears.'],
+];
+
 const builtInLists = () => [
   {
     id: 'y3-autumn1-week4',
@@ -61,13 +83,19 @@ const builtInLists = () => [
     note: 'Adding -ing, -ed, -er and -en to longer words. If the end of the word is stressed (for-GET, be-GIN), double the last letter: forgetting. If it isn\'t (GAR-den, LIM-it), just add the ending: gardening.',
     words: y3Week5.map(([w, sentence]) => ({ w, sentence })),
   },
+  {
+    id: 'y3-autumn1-week6',
+    name: 'Y3 Autumn 1 – Week 6',
+    note: 'The letter y making a short i sound, in the middle of a word: gym, myth, crystal, Egypt.',
+    words: y3Week6.map(([w, sentence]) => ({ w, sentence })),
+  },
 ];
 
 export function defaultConfig() {
   return {
     version: 1,
-    selectedListIds: ['y3-autumn1-week5'], // the list being practised (one at a time)
-    activeListId: 'y3-autumn1-week5', // the list open for editing in Grown-ups
+    selectedListIds: ['y3-autumn1-week6'], // the list being practised (one at a time)
+    activeListId: 'y3-autumn1-week6', // the list open for editing in Grown-ups
     perGo: 10,
     fingerMode: 'auto',
     readSentence: true,

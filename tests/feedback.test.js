@@ -63,6 +63,15 @@ test('week 5: double only when the end is stressed', () => {
   assert.equal(rule('writing', 'writeing'), 'drop-e-ing');
 });
 
+test('week 6: y making a short i sound', () => {
+  assert.equal(rule('symbol', 'simbol'), 'y-for-i');
+  assert.equal(rule('gym', 'gim'), 'y-for-i');
+  assert.equal(rule('crystal', 'cristal'), 'y-for-i');
+  assert.equal(rule('egypt', 'egipt'), 'y-for-i');
+  assert.equal(rule('pyramid', 'piramid'), 'y-for-i');
+  assert.notEqual(rule('happy', 'happi'), 'y-for-i'); // a final y isn't a short i
+});
+
 test('word already ends in e', () => {
   assert.equal(rule('nicer', 'niceer'), 'drop-e');
   assert.equal(rule('nicest', 'niceest'), 'drop-e');
@@ -83,7 +92,8 @@ test('endings and generic hints', () => {
 test('hints never reveal the whole word', () => {
   const words = ['forgetting', 'beginning', 'preferred', 'limiting', 'footballer', 'forgotten', 'beginner',
     'gardening', 'limited', 'writer', 'writing', 'reading', 'reader', 'cleaning', 'cleaner', 'prefer', 'gardener',
-    'limitation', 'begin', 'forget', 'flies', 'copy', 'copier', 'happiest', 'nicest', 'tries', 'copying', 'happy', 'nice', 'pat',
+    'limitation', 'begin', 'forget', 'crystal', 'gym', 'hymn', 'mystery', 'myth', 'pyramid', 'symbol', 'syrup',
+    'typical', 'egypt', 'bicycle', 'cymbals', 'cylinder', 'gymnast', 'gymnastics', 'oxygen', 'crypt', 'lyrics', 'lynx', 'flies', 'copy', 'copier', 'happiest', 'nicest', 'tries', 'copying', 'happy', 'nice', 'pat',
     'replies', 'copied', 'happier', 'nicer', 'patted', 'patting', 'walked', 'kinder', 'walk', 'kind'];
   const misspell = (w) => w.slice(0, -1);
   for (const w of words) {

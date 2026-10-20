@@ -142,6 +142,11 @@ export function hint(target, read) {
   const ops = align(t, r);
   const errs = ops.filter((o) => o.op !== 'same');
 
+  // y making a short i sound inside a word (gym, myth, crystal), written as i
+  if (errs.some((o) => o.op === 'sub' && o.t === 'y' && o.r === 'i' && o.ti < t.length - 1)) {
+    return out('y-for-i', `In this word the short ${b('i')} sound is spelt with a ${b('y')}!`);
+  }
+
   // an extra doubled letter (e.g. wallked)
   const dbl = errs.find((o) => o.op === 'ins' && ops.some((p) => p.op === 'same' && (p.ti === o.ti - 1 || p.ti === o.ti) && p.r === o.r));
   if (errs.length === 1 && dbl) {
