@@ -92,3 +92,41 @@ Built-in word lists (choose one on the home screen):
 - **Y3 Autumn 1, Week 6:** y making a short i sound (gym, myth, crystal, Egypt).
 
 New built-in lists are added to existing devices automatically, without touching their own lists.
+
+## How this was built with Claude
+
+The app was built in October 2026 by talking to Claude Code (Claude Opus 5.5 - Medium effort) in plain English. It started with this prompt:
+
+> Create an app that a primary school pupil could use to learn spellings. Use the words in the example worksheet as a start - and make this configurable in terms of what words are in scope. The focus should be on handwriting the words, as opposed to typing - and target device is the web browser of an iPad with Apple Pencil. The app should have a friendly bee theme.
+>
+> Perhaps read out the word, with a hint option to show the word in a popup, before the user writes the word. And the app should check if the handwritten word is correct - and provide friendly feedback (perhaps using the bee character) on any mistakes.
+>
+> Ideally deploy the app somewhere that offers free hosting. Public site is fine.
+
+From there we went on to:
+
+- **Build and publish the first version** from a photo of the Week 4 worksheet, hosted free on GitHub Pages.
+- **Replace the handwriting reader** with Claude vision behind a Cloudflare Worker, after tests on the iPad showed Google's reader passing misspellings and rejecting correct words.
+- **Add Weeks 5 and 6** from worksheet photos, each with hints for that week's spelling rule, and a home-screen picker for which week to practise.
+- **Make read-aloud natural and correct, for free**, using Apple's Premium voices and "say it as" pronunciations, and fix Safari caching and cut-off speech.
+- **Add a usage and accuracy dashboard** that compares Claude Opus with Claude Haiku and Google on real children's writing.
+
+### How the handwriting check evolved
+
+Reading a child's spelling turned out to be the hard part: a reader must copy mistakes, not fix them. It took five versions, each prompted by a real result on the iPad.
+
+1. **Google's handwriting reader (4 Oct).** Free and good with messy writing, but its dictionary turned "walc" into "walk", so misspellings passed.
+2. **Google plus a letter-by-letter check (9 Oct).** Caught "walc", but rejected a correct "beginning": single letters were misread and the tails of g's merged letters together. It could never work for joined-up writing.
+3. **Claude Opus vision (13 Oct).** A picture of the word goes to Claude through a small Cloudflare Worker that keeps the API key secret. Claude is told to copy the letters exactly, and is never told the target word. Printed and joined-up writing both worked well.
+4. **Cheaper models (13 Oct).** Haiku cost about 40 times less per check and was kept. Sonnet failed intermittently on this account and was dropped.
+5. **Opus, with Haiku and Google compared in the background (19 Oct).** Opus answers the child. Haiku and Google read the same writing so the dashboard shows how they would have scored. The Google fallback was removed, and an "unclear" reading now gets one retry rather than a free pass.
+
+### What we learned
+
+The biggest improvements came from trying the app on the real iPad and reporting back what went wrong.
+
+- **Test on the real device.** The "walc" false pass, the rejected "beginning", Safari hiding the Enhanced voice, cached files and cut-off speech all showed up only on the iPad.
+- **Photos and screenshots make the best prompts.** Each worksheet photo became a word list, with example sentences and a hint for that week's rule, in one step. A screenshot pinpointed each bug.
+- **Plan the big changes first.** Before switching to Claude and before building the dashboard, Claude proposed a plan and asked a few short questions (which reader to use, how much to cross-check, consent for saving images, how long to keep data) before writing code.
+- **Keep control of secrets and releases.** The parent signed in and typed the API key and passwords; Claude never saw them. Prompts such as "separate commits" and "don't deploy yet" set the pace.
+- **Measure instead of guessing.** The dashboard compares readers on real children's writing, so the choice of model rests on evidence rather than impressions.
