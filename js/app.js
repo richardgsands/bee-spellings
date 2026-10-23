@@ -80,7 +80,8 @@ function persist() { store.save(cfg); speech.configure(cfg); pad?.setFingerMode(
 
 function renderHome() {
   const count = (l) => l.words.filter((w) => w.w.trim()).length;
-  $('home-list').innerHTML = cfg.lists
+  // Newest first: built-in weeks are in order and new lists are added at the end.
+  $('home-list').innerHTML = [...cfg.lists].reverse()
     .map((l) => `<option value="${esc(l.id)}">${esc(l.name)} · ${count(l)} word${count(l) === 1 ? '' : 's'}</option>`)
     .join('');
   $('home-list').value = cfg.selectedListIds[0];

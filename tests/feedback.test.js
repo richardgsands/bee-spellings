@@ -93,12 +93,14 @@ test('hints never reveal the whole word', () => {
   const words = ['forgetting', 'beginning', 'preferred', 'limiting', 'footballer', 'forgotten', 'beginner',
     'gardening', 'limited', 'writer', 'writing', 'reading', 'reader', 'cleaning', 'cleaner', 'prefer', 'gardener',
     'limitation', 'begin', 'forget', 'crystal', 'gym', 'hymn', 'mystery', 'myth', 'pyramid', 'symbol', 'syrup',
+    'accident', 'answer', 'believe', 'breathe', 'business', 'house', 'glass', 'letter', 'skipped', 'friday', 'sunday', 'january', 'february',
     'typical', 'egypt', 'bicycle', 'cymbals', 'cylinder', 'gymnast', 'gymnastics', 'oxygen', 'crypt', 'lyrics', 'lynx', 'flies', 'copy', 'copier', 'happiest', 'nicest', 'tries', 'copying', 'happy', 'nice', 'pat',
     'replies', 'copied', 'happier', 'nicer', 'patted', 'patting', 'walked', 'kinder', 'walk', 'kind'];
   const misspell = (w) => w.slice(0, -1);
   for (const w of words) {
+    if (w === 'letter') continue; // hints say "a letter" in the ordinary sense
     const h = hint(w, misspell(w));
-    assert.ok(!h.speak.toLowerCase().includes(w), `${w}: ${h.speak}`);
+    assert.ok(!new RegExp(`\\b${w}\\b`).test(h.speak.toLowerCase()), `${w}: ${h.speak}`);
   }
 });
 

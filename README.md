@@ -86,10 +86,11 @@ python3 -m http.server 8765
 npm test
 ```
 
-Built-in word lists (choose one on the home screen):
+Built-in word lists (choose one on the home screen, newest first):
 - **Y3 Autumn 1, Week 4:** adding -ing, -ed, -er and -est (y → i).
 - **Y3 Autumn 1, Week 5:** doubling the last letter only when the end of the word is stressed (forgetting, gardening).
 - **Y3 Autumn 1, Week 6:** y making a short i sound (gym, myth, crystal, Egypt).
+- **Y3 Autumn 1, Week 7:** revision of earlier weeks plus tricky words (answer, believe, business, February).
 
 New built-in lists are added to existing devices automatically, without touching their own lists.
 

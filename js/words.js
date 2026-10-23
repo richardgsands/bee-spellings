@@ -70,6 +70,29 @@ const y3Week6 = [
   ['lynx', 'A lynx is a wild cat with tufty ears.'],
 ];
 
+const y3Week7 = [
+  ['replies', 'Tom always replies to his letters.'],
+  ['copied', 'I copied the spelling neatly.'],
+  ['happier', 'I feel happier after a hug.'],
+  ['accident', 'I spilt my drink by accident.'],
+  ['answer', 'Put up your hand to answer the question.'],
+  ['believe', 'I believe you can do it!'],
+  ['breathe', 'Take a deep breath, then breathe out slowly.'],
+  ['business', 'My aunt runs a cake business.'],
+  ['house', 'We live in a house with a red door.'],
+  ['glass', 'Pour the water into a glass.'],
+  ['letter', 'I wrote a letter to Grandma.'],
+  ['skipped', 'She skipped all the way to school.'],
+  ['Friday', 'We have our spelling test on Friday.'],
+  ['Sunday', 'On Sunday we went to the beach.'],
+  ['January', 'January is the first month of the year.'],
+  ['February', 'February is the shortest month.'],
+  ['crystal', 'The crystal sparkled in the sunlight.'],
+  ['gym', 'We have PE in the school gym.'],
+  ['hymn', 'We sang a hymn in assembly.'],
+  ['mystery', 'The detective solved the mystery.'],
+];
+
 const builtInLists = () => [
   {
     id: 'y3-autumn1-week4',
@@ -89,13 +112,19 @@ const builtInLists = () => [
     note: 'The letter y making a short i sound, in the middle of a word: gym, myth, crystal, Egypt.',
     words: y3Week6.map(([w, sentence]) => ({ w, sentence })),
   },
+  {
+    id: 'y3-autumn1-week7',
+    name: 'Y3 Autumn 1 – Week 7',
+    note: 'Revision of words from earlier weeks, plus some tricky words to learn by heart: answer, believe, business, February.',
+    words: y3Week7.map(([w, sentence]) => ({ w, sentence })),
+  },
 ];
 
 export function defaultConfig() {
   return {
     version: 1,
-    selectedListIds: ['y3-autumn1-week6'], // the list being practised (one at a time)
-    activeListId: 'y3-autumn1-week6', // the list open for editing in Grown-ups
+    selectedListIds: ['y3-autumn1-week7'], // the list being practised (one at a time)
+    activeListId: 'y3-autumn1-week7', // the list open for editing in Grown-ups
     perGo: 10,
     fingerMode: 'auto',
     readSentence: true,
