@@ -93,6 +93,8 @@ test('hints never reveal the whole word', () => {
   const words = ['forgetting', 'beginning', 'preferred', 'limiting', 'footballer', 'forgotten', 'beginner',
     'gardening', 'limited', 'writer', 'writing', 'reading', 'reader', 'cleaning', 'cleaner', 'prefer', 'gardener',
     'limitation', 'begin', 'forget', 'crystal', 'gym', 'hymn', 'mystery', 'myth', 'pyramid', 'symbol', 'syrup',
+    'consider', 'describe', 'disappear', 'eight', 'exercise', 'continue', 'different', 'early', 'eighth', 'experience',
+    'decide', 'difficult', 'earth', 'enough', 'experiment', 'extreme', 'forward', 'famous', 'favourite',
     'accident', 'answer', 'believe', 'breathe', 'business', 'house', 'glass', 'letter', 'skipped', 'friday', 'sunday', 'january', 'february',
     'typical', 'egypt', 'bicycle', 'cymbals', 'cylinder', 'gymnast', 'gymnastics', 'oxygen', 'crypt', 'lyrics', 'lynx', 'flies', 'copy', 'copier', 'happiest', 'nicest', 'tries', 'copying', 'happy', 'nice', 'pat',
     'replies', 'copied', 'happier', 'nicer', 'patted', 'patting', 'walked', 'kinder', 'walk', 'kind'];

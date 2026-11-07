@@ -176,7 +176,7 @@ export function hint(target, read) {
   }
 
   if (errs.length > Math.max(2, t.length / 2)) {
-    return out('different', `Hmm, that looks like a different word. Listen carefully to it again!`);
+    return out('different', `Hmm, that looks like another word. Listen carefully to it again!`);
   }
   return out('few', `A few letters need fixing – look ${place}.`);
 }
