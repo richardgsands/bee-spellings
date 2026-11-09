@@ -7,7 +7,7 @@ Bumble the bee reads each word aloud. The child writes the word on the lined pad
 - **Hear it**: read the word (and an example sentence) again.
 - **Peek**: show the word for 3 seconds (the child earns half a honey jar instead of a whole one).
 - **Check**: the handwriting is read and compared with the word.
-  1. First mistake: a hint that doesn't give the answer away. Hints know the spelling rules: y → i before -es/-ed/-er/-est, keep the y before -ing, y spelling a short i sound (gym), doubling after a short vowel or a stressed ending (and not doubling otherwise), and dropping or not repeating a final e.
+  1. First mistake: a hint that doesn't give the answer away. If only a letter or two is wrong and no spelling rule applies, Bumble skips the hint and goes straight to step 2. Hints know the spelling rules: y → i before -es/-ed/-er/-est, keep the y before -ing, y spelling a short i sound (gym), doubling after a short vowel or a stressed ending (and not doubling otherwise), and dropping or not repeating a final e.
   2. Second mistake: Bumble shows what it read next to the real word with the letters to fix highlighted, and the child copies it.
 - **Tricky words**: practise again the words that were missed or peeked at.
 - **My words**: on the home screen, choose which week's list to practise.

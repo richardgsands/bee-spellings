@@ -79,6 +79,9 @@ export function marks(target, read) {
   return { target: t, read: r };
 }
 
+// Hints that teach a spelling rule (rather than just pointing at a letter).
+export const RULE_HINTS = new Set(['y-to-i', 'keep-y-ing', 'double', 'no-double', 'drop-e-ing', 'drop-e', 'y-for-i', 'extra-double']);
+
 const b = (s) => `<b>${s}</b>`;
 const plain = (html) => html.replace(/<[^>]+>/g, '').replace(/-(\w+)/g, ' $1');
 

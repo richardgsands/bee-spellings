@@ -1,7 +1,7 @@
 import { Pad } from './pad.js';
 import { readHandwriting } from './recognize.js';
 import { deviceId, track } from './analytics.js';
-import { evaluateRead, hint, letterErrors, marks } from './feedback.js';
+import { evaluateRead, hint, letterErrors, marks, RULE_HINTS } from './feedback.js';
 import * as speech from './speech.js';
 import * as store from './words.js';
 
@@ -236,10 +236,11 @@ function wrong(read) {
   const w = current();
   boop();
   pad.dim();
-  // Only a letter or two out: go straight to the side-by-side comparison.
-  const close = session.attempt === 1 && letterErrors(w.w, read) <= 2;
+  // Only a letter or two out: go straight to the side-by-side comparison,
+  // unless a spelling-rule hint applies (those teach the week's pattern).
+  const h = session.attempt === 1 ? hint(w.w, read) : null;
+  const close = h && !RULE_HINTS.has(h.rule) && letterErrors(w.w, read) <= 2;
   if (session.attempt === 1 && !close) {
-    const h = hint(w.w, read);
     const lead = ['different', 'empty'].includes(h.rule) ? 'Good try!' : pick(['Ooh, nearly!', 'Good try!', 'So close!']);
     beeMood('oops', 'wiggle');
     setBubble(`${lead} ${h.html} Have another go! 💪`);

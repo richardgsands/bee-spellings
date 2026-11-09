@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { norm, evaluateRead, align, marks, hint, letterErrors } from '../js/feedback.js';
+import { norm, evaluateRead, align, marks, hint, letterErrors, RULE_HINTS } from '../js/feedback.js';
 
 test('norm lowercases, strips spaces and stray punctuation', () => {
   assert.equal(norm('  Happ ier. '), 'happier');
@@ -124,4 +124,12 @@ test('letterErrors counts how many letters are out', () => {
   assert.equal(letterErrors('forgetting', 'forgeting'), 1);
   assert.equal(letterErrors('February', 'Febuary'), 1);
   assert.ok(letterErrors('happy', 'elephant') > 2);
+});
+
+test('rule hints are kept for near misses; plain slips are not rule hints', () => {
+  assert.ok(RULE_HINTS.has(rule('patted', 'pated')));
+  assert.ok(RULE_HINTS.has(rule('happier', 'happyer')));
+  assert.ok(RULE_HINTS.has(rule('gym', 'gim')));
+  assert.ok(!RULE_HINTS.has(rule('walk', 'walc')));
+  assert.ok(!RULE_HINTS.has(rule('kind', 'kidn')));
 });
