@@ -603,23 +603,18 @@ window.speechSynthesis?.addEventListener?.('voiceschanged', () => {
 });
 holdButton($('btn-misread'), 1500, misread);
 // Pick up new versions without closing Safari: when the app comes back into view
-// (and every few minutes) fingerprint the live files, and if they've changed,
+// (and every few minutes) check version.json, and if it has been bumped,
 // reload next time the home screen is showing (never in the middle of a word).
-const APP_FILES = ['index.html', 'css/style.css', 'sw.js', ...['app', 'feedback', 'pad', 'recognize', 'speech', 'words', 'analytics'].map((f) => `js/${f}.js`)];
 let loadedVersion = null, updateReady = false;
-async function fingerprint() {
-  const texts = await Promise.all(APP_FILES.map(async (f) => {
-    const res = await fetch(f, { cache: 'no-cache' });
-    if (!res.ok) throw new Error(f);
-    return res.text();
-  }));
-  const hash = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(texts.join('\0')));
-  return [...new Uint8Array(hash)].map((x) => x.toString(16).padStart(2, '0')).join('');
+async function latestVersion() {
+  const res = await fetch('version.json', { cache: 'no-cache' });
+  if (!res.ok) throw new Error('version.json');
+  return (await res.json()).version;
 }
 async function checkForUpdate() {
   if (!navigator.onLine) return;
   try {
-    const v = await fingerprint();
+    const v = await latestVersion();
     if (loadedVersion === null) loadedVersion = v;
     else if (v !== loadedVersion) updateReady = true;
   } catch { /* offline or mid-deploy: try again later */ }
