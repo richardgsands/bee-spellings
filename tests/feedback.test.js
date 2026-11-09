@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { norm, evaluateRead, align, marks, hint } from '../js/feedback.js';
+import { norm, evaluateRead, align, marks, hint, letterErrors } from '../js/feedback.js';
 
 test('norm lowercases, strips spaces and stray punctuation', () => {
   assert.equal(norm('  Happ ier. '), 'happier');
@@ -113,4 +113,15 @@ test('evaluateRead: exact letters decide, unclear readings ask for a neater go',
   assert.equal(evaluateRead('walk', 'walc', true).status, 'unclear');
   assert.equal(evaluateRead('walk', '').status, 'empty');
   assert.equal(hint('walk', evaluateRead('walk', 'walc').read).rule, 'one-letter');
+});
+
+test('letterErrors counts how many letters are out', () => {
+  assert.equal(letterErrors('walk', 'walk'), 0);
+  assert.equal(letterErrors('walk', 'walc'), 1);
+  assert.equal(letterErrors('patted', 'pated'), 1);
+  assert.equal(letterErrors('happier', 'happyer'), 1);
+  assert.equal(letterErrors('kind', 'kidn'), 2);
+  assert.equal(letterErrors('forgetting', 'forgeting'), 1);
+  assert.equal(letterErrors('February', 'Febuary'), 1);
+  assert.ok(letterErrors('happy', 'elephant') > 2);
 });

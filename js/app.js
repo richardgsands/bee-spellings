@@ -1,7 +1,7 @@
 import { Pad } from './pad.js';
 import { readHandwriting } from './recognize.js';
 import { deviceId, track } from './analytics.js';
-import { evaluateRead, hint, marks } from './feedback.js';
+import { evaluateRead, hint, letterErrors, marks } from './feedback.js';
 import * as speech from './speech.js';
 import * as store from './words.js';
 
@@ -106,7 +106,7 @@ function renderLearn() {
       b.addEventListener('click', async () => {
         b.classList.add('speaking');
         const word = speech.spoken(w.w, w.say);
-        await speech.say(word, cfg.readSentence && w.sentence, word);
+        await speech.say(word, cfg.readSentence && w.sentence);
         b.classList.remove('speaking');
       });
       comb.append(b);
@@ -133,7 +133,7 @@ function current() { return session.words[session.i]; }
 function sayWord() {
   const w = current();
   const word = speech.spoken(w.w, w.say);
-  return speech.say(`Can you write… ${word}?`, cfg.readSentence && w.sentence, cfg.readSentence && w.sentence && word);
+  return speech.say(`Can you write… ${word}?`, cfg.readSentence && w.sentence);
 }
 
 function setBubble(html, { good = false } = {}) {
@@ -236,22 +236,25 @@ function wrong(read) {
   const w = current();
   boop();
   pad.dim();
-  if (session.attempt === 1) {
+  // Only a letter or two out: go straight to the side-by-side comparison.
+  const close = session.attempt === 1 && letterErrors(w.w, read) <= 2;
+  if (session.attempt === 1 && !close) {
     const h = hint(w.w, read);
     const lead = ['different', 'empty'].includes(h.rule) ? 'Good try!' : pick(['Ooh, nearly!', 'Good try!', 'So close!']);
     beeMood('oops', 'wiggle');
     setBubble(`${lead} ${h.html} Have another go! 💪`);
     speech.say(lead, h.speak, 'Have another go!');
     session.attempt = 2;
-  } else if (session.attempt === 2) {
+  } else if (session.attempt <= 2) {
+    const lead = close ? 'So close! ' : '';
     beeMood('think', 'wiggle');
-    setBubble(`Let's look at it together. The <span style="color:var(--leaf)">green</span> letters are the ones to fix. Copy it carefully, then press Check!`);
+    setBubble(`${lead}Let's look at it together. The <span style="color:var(--leaf)">green</span> letters are the ones to fix. Copy it carefully, then press Check!`);
     const r = $('reveal');
     r.innerHTML = revealHTML(w.w, read);
     r.classList.remove('hidden');
     session.revealed = true;
     session.attempt = 3;
-    speech.say(`Let's look at it together. Copy it carefully, then press check.`);
+    speech.say(`${lead}Let's look at it together. Copy it carefully, then press check.`);
   } else {
     beeMood('smile');
     setBubble(`Good try! This one is tricky. We'll practise <b>${esc(w.w)}</b> again soon. 🌼`);

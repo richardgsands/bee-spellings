@@ -56,6 +56,11 @@ export function align(a, b) {
   return ops.reverse();
 }
 
+// How many letters differ (a missing, extra or wrong letter counts 1; two swapped letters count 2).
+export function letterErrors(target, read) {
+  return align(norm(target), norm(read)).reduce((n, o) => n + (o.op === 'same' ? 0 : o.op === 'swap' ? 2 : 1), 0);
+}
+
 // Letter-by-letter marks for showing both words with mistakes highlighted.
 export function marks(target, read) {
   const ops = align(norm(target), norm(read));
