@@ -404,6 +404,7 @@ function holdButton(btn, ms, done) {
 }
 
 function renderSettings() {
+  showVersion();
   const sel = $('list-select');
   sel.innerHTML = cfg.lists.map((l) => `<option value="${esc(l.id)}">${esc(l.name)}</option>`).join('');
   sel.value = list().id;
@@ -605,7 +606,11 @@ holdButton($('btn-misread'), 1500, misread);
 // Pick up new versions without closing Safari: when the app comes back into view
 // (and every few minutes) check version.json, and if it has been bumped,
 // reload next time the home screen is showing (never in the middle of a word).
-let loadedVersion = null, updateReady = false;
+let loadedVersion = null, updateReady = false, liveVersion = null;
+function showVersion() {
+  $('app-version').textContent = loadedVersion === null ? '' : `Version ${loadedVersion}`
+    + (updateReady ? ` (version ${liveVersion} is ready and will load when you go home)` : '');
+}
 async function latestVersion() {
   const res = await fetch('version.json', { cache: 'no-cache' });
   if (!res.ok) throw new Error('version.json');
@@ -616,8 +621,9 @@ async function checkForUpdate() {
   try {
     const v = await latestVersion();
     if (loadedVersion === null) loadedVersion = v;
-    else if (v !== loadedVersion) updateReady = true;
+    else if (v !== loadedVersion) { updateReady = true; liveVersion = v; }
   } catch { /* offline or mid-deploy: try again later */ }
+  showVersion();
   if (updateReady && $('home').classList.contains('active') && !document.hidden) location.reload();
 }
 document.addEventListener('visibilitychange', () => { if (!document.hidden) checkForUpdate(); });
