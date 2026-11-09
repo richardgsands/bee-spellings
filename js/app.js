@@ -68,7 +68,7 @@ function confetti() {
 // ---------- screens ----------
 function show(id) {
   document.querySelectorAll('.screen').forEach((s) => s.classList.toggle('active', s.id === id));
-  if (id === 'home') renderHome();
+  if (id === 'home') { if (updateReady) return location.reload(); renderHome(); }
   if (id === 'learn') renderLearn();
   if (id === 'settings') renderSettings();
 }
@@ -602,6 +602,34 @@ window.speechSynthesis?.addEventListener?.('voiceschanged', () => {
   if ($('settings').classList.contains('active')) renderVoices();
 });
 holdButton($('btn-misread'), 1500, misread);
+// Pick up new versions without closing Safari: when the app comes back into view
+// (and every few minutes) fingerprint the live files, and if they've changed,
+// reload next time the home screen is showing (never in the middle of a word).
+const APP_FILES = ['index.html', 'css/style.css', 'sw.js', ...['app', 'feedback', 'pad', 'recognize', 'speech', 'words', 'analytics'].map((f) => `js/${f}.js`)];
+let loadedVersion = null, updateReady = false;
+async function fingerprint() {
+  const texts = await Promise.all(APP_FILES.map(async (f) => {
+    const res = await fetch(f, { cache: 'no-cache' });
+    if (!res.ok) throw new Error(f);
+    return res.text();
+  }));
+  const hash = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(texts.join('\0')));
+  return [...new Uint8Array(hash)].map((x) => x.toString(16).padStart(2, '0')).join('');
+}
+async function checkForUpdate() {
+  if (!navigator.onLine) return;
+  try {
+    const v = await fingerprint();
+    if (loadedVersion === null) loadedVersion = v;
+    else if (v !== loadedVersion) updateReady = true;
+  } catch { /* offline or mid-deploy: try again later */ }
+  if (updateReady && $('home').classList.contains('active') && !document.hidden) location.reload();
+}
+document.addEventListener('visibilitychange', () => { if (!document.hidden) checkForUpdate(); });
+window.addEventListener('pageshow', (e) => { if (e.persisted) checkForUpdate(); });
+setInterval(checkForUpdate, 3 * 60 * 1000);
+checkForUpdate();
+
 bindSettings();
 speech.configure(cfg);
 show('home');

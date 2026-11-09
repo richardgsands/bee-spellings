@@ -32,7 +32,7 @@ Everything is stored in the browser on that device (`localStorage`).
 - If the Worker or Claude can't be reached, Bumble says it's taking a break and the child can press Check again later. (Google's handwriting reader is no longer used by the app: its dictionary turns misspellings into real words.)
 - After each check, the bubble shows what Bumble read. If Bumble misreads correct writing, a grown-up can press and hold **"Bumble misread it"** to count it as correct.
 - Read-aloud uses the browser's built-in speech synthesis. It picks the most natural British voice on the device (Apple's free Premium or Enhanced voices first, never the novelty ones). Words that voices get wrong on their own are spoken with a sound-alike spelling (e.g. "reading" as "reeding", not the town), and grown-ups can add their own in the word list's **Say it as** box.
-- A small service worker (`sw.js`) fetches the latest files on every load when online, so updates appear on the next reload. Saved copies are used when offline.
+- A small service worker (`sw.js`) fetches the latest files on every load when online, so updates appear on the next reload. Saved copies are used when offline. An open app also checks for changes to its files when it comes back into view and every 3 minutes, and reloads itself on the home screen when there's a new version, so there's no need to close Safari.
 
 ## Usage and accuracy dashboard
 
