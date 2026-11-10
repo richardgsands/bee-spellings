@@ -216,12 +216,16 @@ export function shuffle(arr) {
   return a;
 }
 
-// Record a result: 2 = first try without peeking, 1 = got there, 0 = not yet.
-export function record(cfg, listId, word, score) {
+// Record a go: 2 = right first time without peeking, 1 = got there, 0 = not yet.
+// `last` is the first go of the latest session (it decides the Tricky words);
+// `goes` and `firstRight` are the tally shown under Grown-ups.
+export function record(cfg, listId, word, score, firstGo = true) {
   const s = (cfg.stats[listId] ||= {});
   const w = (s[word] ||= { seen: 0, best: 0, last: 0 });
   w.seen++;
-  w.last = score;
+  w.goes = (w.goes || 0) + 1;
+  if (score === 2) w.firstRight = (w.firstRight || 0) + 1;
+  if (firstGo) w.last = score;
   w.best = Math.max(w.best, score);
 }
 

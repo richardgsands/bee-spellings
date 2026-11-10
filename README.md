@@ -9,7 +9,8 @@ Bumble the bee reads each word aloud. The child writes the word on the lined pad
 - **Check**: the handwriting is read and compared with the word.
   1. First mistake: a hint that doesn't give the answer away. If only a letter or two is wrong and no spelling rule applies, Bumble skips the hint and goes straight to step 2. Hints know the spelling rules: y → i before -es/-ed/-er/-est, keep the y before -ing, y spelling a short i sound (gym), doubling after a short vowel or a stressed ending (and not doubling otherwise), and dropping or not repeating a final e.
   2. Second mistake: Bumble shows what it read next to the real word with the letters to fix highlighted, and the child copies it.
-- **Tricky words**: practise again the words that were missed or peeked at.
+- **Try again**: a word that was missed or peeked at comes back after one other word, until it's spelled right first time without peeking.
+- **Tricky words**: practise again the words that weren't right first time last go.
 - **My words**: on the home screen, choose which week's list to practise.
 
 ## Grown-ups
@@ -18,6 +19,7 @@ Press and hold **Grown-ups** on the home screen for 1.5 seconds. There you can:
 - add, edit or delete word lists
 - add example sentences
 - choose how many words per go, the voice and the speed
+- see how many times each word was spelled right first time (e.g. *3 of 5* goes) in the word list
 - set palm rejection: once the Pencil is used, finger touches are ignored
 - export or import lists as JSON
 

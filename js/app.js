@@ -120,7 +120,10 @@ function startSession(words) {
   if (!words.length) return;
   let pool = store.shuffle(words);
   if (cfg.perGo > 0) pool = pool.slice(0, cfg.perGo);
-  session = { words: pool, i: 0, results: [], points: 0 };
+  // `words` is the queue of goes; a word missed or peeked at goes back in a little later,
+  // until it's spelled right first time. `byWord` tracks each word's goes.
+  const byWord = new Map(pool.map((w) => [w.w, { w: w.w, first: null, goes: 0, done: false }]));
+  session = { words: pool, i: 0, byWord, points: 0 };
   track('start', { lists: cfg.selectedListIds, words: pool.length });
   show('practise');
   if (!pad) pad = new Pad($('pad'), { fingerMode: cfg.fingerMode, onChange: updateButtons });
@@ -151,7 +154,11 @@ function presentWord() {
   $('btn-check').classList.remove('hidden');
   renderProgress();
   beeMood('smile');
-  setBubble(`Word ${session.i + 1} of ${session.words.length}. Listen carefully, then write the word you hear! 👂✏️`);
+  const rec = session.byWord.get(current().w);
+  const n = [...session.byWord.values()].filter((r) => r.goes).length + 1;
+  setBubble(rec.goes
+    ? `Here's a tricky one again! Listen carefully, then write the word you hear! 👂✏️`
+    : `Word ${n} of ${session.byWord.size}. Listen carefully, then write the word you hear! 👂✏️`);
   updateButtons();
   sayWord();
 }
@@ -159,13 +166,14 @@ function presentWord() {
 function renderProgress() {
   const p = $('progress');
   p.innerHTML = '';
-  session.words.forEach((_, i) => {
+  const now = current().w;
+  for (const r of session.byWord.values()) {
     const el = document.createElement('i');
-    const r = session.results[i];
-    if (r) el.className = 'r' + r.score;
-    else if (i === session.i) el.className = 'now';
+    if (r.done) el.className = r.first === 2 ? 'r2' : 'r1';
+    else if (r.w === now) el.className = 'now';
+    else if (r.goes) el.className = 'r0';
     p.append(el);
-  });
+  }
 }
 
 function updateButtons(busy = false) {
@@ -196,10 +204,22 @@ const praise = [
 
 function finishWord(score) {
   const w = current();
+  const rec = session.byWord.get(w.w);
+  const stats = (cfg.stats[w.listId] ||= {});
+  // Remember how things were, in case a grown-up says Bumble misread it.
+  session.undo = { score, rec: { ...rec }, stat: stats[w.w] && { ...stats[w.w] }, inserted: -1 };
   session.finished = true;
-  session.results[session.i] = { w: w.w, score };
   session.points += score;
-  store.record(cfg, w.listId, w.w, score);
+  store.record(cfg, w.listId, w.w, score, rec.goes === 0);
+  if (rec.goes === 0) rec.first = score;
+  rec.goes++;
+  if (score === 2) rec.done = true;
+  else {
+    // Try it again after one other word (straight away if it's the only one left).
+    const at = Math.min(session.i + 2, session.words.length);
+    session.words.splice(at, 0, w);
+    session.undo.inserted = at;
+  }
   store.save(cfg);
   if (score) showJars();
   renderProgress();
@@ -258,8 +278,8 @@ function wrong(read) {
     speech.say(`${lead}Let's look at it together. Copy it carefully, then press check.`);
   } else {
     beeMood('smile');
-    setBubble(`Good try! This one is tricky. We'll practise <b>${esc(w.w)}</b> again soon. 🌼`);
-    speech.say(`Good try! We'll practise this one again soon.`);
+    setBubble(`Good try! This one is tricky. We'll come back to <b>${esc(w.w)}</b> in a moment. 🌼`);
+    speech.say(`Good try! We'll come back to this one in a moment.`);
     finishWord(0);
   }
   updateButtons();
@@ -339,8 +359,14 @@ async function check() {
 // A grown-up says the writing was right and Bumble misread it.
 function misread() {
   if (!session) return;
-  const prev = session.results[session.i];
-  if (prev) session.points -= prev.score; // the word had already been scored as "not yet"
+  const u = session.finished && session.undo;
+  if (u) { // the word had already been scored as "not yet": undo that
+    const w = current();
+    session.points -= u.score;
+    if (u.inserted >= 0) session.words.splice(u.inserted, 1);
+    Object.assign(session.byWord.get(w.w), u.rec);
+    if (u.stat) cfg.stats[w.listId][w.w] = u.stat; else delete cfg.stats[w.listId][w.w];
+  }
   session.finished = false;
   session.attempt = session.checkedAttempt || session.attempt;
   track('misread', { target: current().w, read: $('bubble-read').textContent.replace('Bumble read: ', '') });
@@ -355,17 +381,19 @@ function next() {
 
 function showResults() {
   speech.stop();
-  const max = session.words.length * 2;
-  const pct = session.points / max;
+  const results = [...session.byWord.values()];
+  const firstTime = results.filter((r) => r.first === 2).length;
+  const pct = firstTime / results.length;
   $('results-title').textContent = pct === 1 ? 'Perfect! Buzz-tastic!' : pct >= 0.7 ? 'Bee-utiful work!' : 'Well done for trying!';
   const jars = session.points / 2;
   $('results-sub').textContent = `You collected ${Math.floor(jars)}${jars % 1 ? '½' : ''} jar${jars === 1 ? '' : 's'} of honey 🍯`;
-  const icon = ['🔁', '👍', '⭐'];
-  $('results-list').innerHTML = session.results.map((r) => `<li class="r${r.score}">${icon[r.score]} ${esc(r.w)}</li>`).join('');
-  const tricky = session.results.filter((r) => r.score < 2);
+  $('results-list').innerHTML = results.filter((r) => r.goes).map((r) => r.first === 2
+    ? `<li class="r2">⭐ ${esc(r.w)}</li>`
+    : `<li class="r${r.done ? 1 : 0}">🔁 ${esc(r.w)} <small>(${r.goes} goes)</small></li>`).join('');
+  const tricky = results.filter((r) => r.goes && r.first < 2);
   $('btn-results-tricky').classList.toggle('hidden', !tricky.length);
   show('results');
-  track('finish', { words: session.words.length, points: session.points, max });
+  track('finish', { words: results.length, goes: session.words.length, firstTime, points: session.points });
   if (pct >= 0.7) { confetti(); chime(); }
   speech.say($('results-title').textContent.replace('Bee-utiful', 'Beautiful'), $('results-sub').textContent);
 }
@@ -466,6 +494,12 @@ function renderVoices() {
     : '<li>None reported yet – try again in a moment.</li>';
 }
 
+// "3 of 5": goes spelled right first time (no peeking), out of all goes.
+function tally(word) {
+  const s = cfg.stats[list().id]?.[word];
+  return s?.goes ? `${s.firstRight || 0} of ${s.goes}` : '–';
+}
+
 function renderWordRows() {
   const body = $('words-body');
   body.innerHTML = '';
@@ -475,6 +509,7 @@ function renderWordRows() {
       <td><input type="text" class="word-input" value="${esc(w.w)}" autocapitalize="off" autocorrect="off" spellcheck="false"></td>
       <td><input type="text" value="${esc(w.sentence || '')}" placeholder="—"></td>
       <td><input type="text" class="say-input" value="${esc(w.say || '')}" placeholder="—" autocapitalize="off" autocorrect="off" spellcheck="false"></td>
+      <td class="tally">${tally(w.w)}</td>
       <td><button class="del" aria-label="Remove word">🗑️</button></td>`;
     const [word, sentence, sayAs] = tr.querySelectorAll('input');
     sayAs.addEventListener('change', () => { w.say = sayAs.value.trim(); persist(); speech.say(speech.spoken(w.w, w.say)); });
@@ -582,7 +617,7 @@ $('home-list').addEventListener('change', (e) => { cfg.selectedListIds = [e.targ
 $('btn-tricky').addEventListener('click', () => startSession(store.trickyWords(cfg)));
 $('btn-again').addEventListener('click', () => startSession(inScope()));
 $('btn-results-tricky').addEventListener('click', () => {
-  const tricky = new Set(session.results.filter((r) => r.score < 2).map((r) => r.w));
+  const tricky = new Set([...session.byWord.values()].filter((r) => r.goes && r.first < 2).map((r) => r.w));
   startSession(inScope().filter((w) => tricky.has(w.w)));
 });
 $('btn-hear').addEventListener('click', sayWord);
@@ -593,7 +628,7 @@ $('btn-clear').addEventListener('click', () => pad.clear());
 $('btn-check').addEventListener('click', check);
 $('btn-next').addEventListener('click', next);
 $('btn-quit').addEventListener('click', () => {
-  if (session && session.results.length && !confirm('Stop practising and go home?')) return;
+  if (session && [...session.byWord.values()].some((r) => r.goes) && !confirm('Stop practising and go home?')) return;
   speech.stop();
   closePeek();
   show('home');
