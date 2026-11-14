@@ -72,6 +72,19 @@ test('week 6: y making a short i sound', () => {
   assert.notEqual(rule('happy', 'happi'), 'y-for-i'); // a final y isn't a short i
 });
 
+test('autumn 2 week 3: ou making a short u sound', () => {
+  assert.equal(rule('young', 'yung'), 'ou-for-u');
+  assert.equal(rule('touch', 'tuch'), 'ou-for-u');
+  assert.equal(rule('double', 'dubble'), 'ou-for-u');
+  assert.equal(rule('country', 'cuntry'), 'ou-for-u');
+  assert.equal(rule('colour', 'color'), 'ou-for-u');
+  assert.equal(rule('enough', 'enuf'), 'ou-for-u');
+  assert.equal(rule('cousin', 'cusin'), 'ou-for-u');
+  assert.equal(rule('countries', 'countrys'), 'y-to-i');
+  assert.equal(rule('doubling', 'doubleing'), 'drop-e-ing');
+  assert.notEqual(rule('touch', 'touck'), 'ou-for-u'); // the ou is right
+});
+
 test('word already ends in e', () => {
   assert.equal(rule('nicer', 'niceer'), 'drop-e');
   assert.equal(rule('nicest', 'niceest'), 'drop-e');
@@ -97,6 +110,7 @@ test('hints never reveal the whole word', () => {
     'decide', 'difficult', 'earth', 'enough', 'experiment', 'extreme', 'forward', 'famous', 'favourite',
     'accident', 'answer', 'believe', 'breathe', 'business', 'house', 'glass', 'letter', 'skipped', 'friday', 'sunday', 'january', 'february',
     'typical', 'egypt', 'bicycle', 'cymbals', 'cylinder', 'gymnast', 'gymnastics', 'oxygen', 'crypt', 'lyrics', 'lynx', 'flies', 'copy', 'copier', 'happiest', 'nicest', 'tries', 'copying', 'happy', 'nice', 'pat',
+    'young', 'touch', 'double', 'trouble', 'country', 'courage', 'encourage', 'colour', 'couple', 'southern', 'cousins', 'nourish', 'countries', 'rough', 'cousin', 'doubling', 'touched', 'youngster', 'troubling',
     'replies', 'copied', 'happier', 'nicer', 'patted', 'patting', 'walked', 'kinder', 'walk', 'kind'];
   const misspell = (w) => w.slice(0, -1);
   for (const w of words) {

@@ -7,7 +7,7 @@ Bumble the bee reads each word aloud. The child writes the word on the lined pad
 - **Hear it**: read the word (and an example sentence) again.
 - **Peek**: show the word for 3 seconds (the child earns half a honey jar instead of a whole one).
 - **Check**: the handwriting is read and compared with the word.
-  1. First mistake: a hint that doesn't give the answer away. If only a letter or two is wrong and no spelling rule applies, Bumble skips the hint and goes straight to step 2. Hints know the spelling rules: y → i before -es/-ed/-er/-est, keep the y before -ing, y spelling a short i sound (gym), doubling after a short vowel or a stressed ending (and not doubling otherwise), and dropping or not repeating a final e.
+  1. First mistake: a hint that doesn't give the answer away. If only a letter or two is wrong and no spelling rule applies, Bumble skips the hint and goes straight to step 2. Hints know the spelling rules: y → i before -es/-ed/-er/-est, keep the y before -ing, y spelling a short i sound (gym), ou spelling a short u sound (touch), doubling after a short vowel or a stressed ending (and not doubling otherwise), and dropping or not repeating a final e.
   2. Second mistake: Bumble shows what it read next to the real word with the letters to fix highlighted, and the child copies it.
 - **Try again**: a word that was missed or peeked at comes back after one other word, until it's spelled right first time without peeking.
 - **Tricky words**: practise again the words that weren't right first time last go.
@@ -94,6 +94,7 @@ Built-in word lists (choose one on the home screen, newest first):
 - **Y3 Autumn 1, Week 6:** y making a short i sound (gym, myth, crystal, Egypt).
 - **Y3 Autumn 1, Week 7:** revision of earlier weeks plus tricky words (answer, believe, business, February).
 - **Y3 Autumn 2, Week 2:** tricky words to learn by heart (consider, eighth, favourite, February).
+- **Y3 Autumn 2, Week 3:** ou making a short u sound (young, touch, double, country).
 
 New built-in lists are added to existing devices automatically, without touching their own lists.
 

@@ -80,7 +80,7 @@ export function marks(target, read) {
 }
 
 // Hints that teach a spelling rule (rather than just pointing at a letter).
-export const RULE_HINTS = new Set(['y-to-i', 'keep-y-ing', 'double', 'no-double', 'drop-e-ing', 'drop-e', 'y-for-i', 'extra-double']);
+export const RULE_HINTS = new Set(['y-to-i', 'keep-y-ing', 'double', 'no-double', 'drop-e-ing', 'drop-e', 'y-for-i', 'ou-for-u', 'extra-double']);
 
 const b = (s) => `<b>${s}</b>`;
 const plain = (html) => html.replace(/<[^>]+>/g, '').replace(/-(\w+)/g, ' $1');
@@ -153,6 +153,12 @@ export function hint(target, read) {
   // y making a short i sound inside a word (gym, myth, crystal), written as i
   if (errs.some((o) => o.op === 'sub' && o.t === 'y' && o.r === 'i' && o.ti < t.length - 1)) {
     return out('y-for-i', `In this word the short ${b('i')} sound is spelt with a ${b('y')}!`);
+  }
+
+  // ou making a short u sound (young, touch, double, country), written without the ou
+  const ou = [...t.matchAll(/ou/g)].map((x) => x.index);
+  if (ou.length && !r.includes('ou') && errs.some((o) => ou.some((p) => o.ti >= p && o.ti <= p + 2))) {
+    return out('ou-for-u', `In this word the ${b('u')} sound is spelt ${b('ou')}!`);
   }
 
   // an extra doubled letter (e.g. wallked)

@@ -116,6 +116,29 @@ const y3Autumn2Week2 = [
   ['February', 'February is the shortest month.'],
 ];
 
+const y3Autumn2Week3 = [
+  ['young', 'The young bird learned to fly.'],
+  ['touch', 'Please do not touch the paint.'],
+  ['double', 'I had a double scoop of ice cream.'],
+  ['trouble', 'The naughty puppy got into trouble.'],
+  ['country', 'France is a country in Europe.'],
+  ['courage', 'It takes courage to try something new.'],
+  ['encourage', 'We cheer to encourage our team.'],
+  ['colour', 'Yellow is the colour of the sun.'],
+  ['couple', 'I ate a couple of biscuits.'],
+  ['southern', 'Penguins live in the southern part of the world.'],
+  ['cousins', 'My cousins came to stay for the weekend.'],
+  ['enough', 'Is there enough cake for everyone?'],
+  ['nourish', 'Healthy food will nourish your body.'],
+  ['countries', 'We visited two countries on holiday.'],
+  ['rough', 'The bark of the tree feels rough.'],
+  ['cousin', 'My cousin is the same age as me.'],
+  ['doubling', 'The number of bees is doubling every week.'],
+  ['touched', 'She touched the soft fur of the rabbit.'],
+  ['youngster', 'The youngster rode a scooter to school.'],
+  ['troubling', 'Something was troubling the sad dragon.'],
+];
+
 const builtInLists = () => [
   {
     id: 'y3-autumn1-week4',
@@ -147,13 +170,19 @@ const builtInLists = () => [
     note: 'Tricky words to learn by heart. Look carefully at the hard part of each word: consider, eighth, favourite, February.',
     words: y3Autumn2Week2.map(([w, sentence]) => ({ w, sentence })),
   },
+  {
+    id: 'y3-autumn2-week3',
+    name: 'Y3 Autumn 2 – Week 3',
+    note: 'The letters ou making a short u sound: young, touch, double, country.',
+    words: y3Autumn2Week3.map(([w, sentence]) => ({ w, sentence })),
+  },
 ];
 
 export function defaultConfig() {
   return {
     version: 1,
-    selectedListIds: ['y3-autumn2-week2'], // the list being practised (one at a time)
-    activeListId: 'y3-autumn2-week2', // the list open for editing in Grown-ups
+    selectedListIds: ['y3-autumn2-week3'], // the list being practised (one at a time)
+    activeListId: 'y3-autumn2-week3', // the list open for editing in Grown-ups
     perGo: 10,
     fingerMode: 'auto',
     readSentence: true,
